@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": false,
+    "module": "es6",
+    "target": "es5",
+    "jsx": "react",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "lib": [ "es7", "dom" ],
+    "types": ["node"],
+    "moduleResolution": "node",
+  },
+  "include": [
+    "./src/**/*.ts",
+  ],
+}

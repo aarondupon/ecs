@@ -1,0 +1,24 @@
+{
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "extends": "airbnb",
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module"
+  },
+  "rules": {
+    "semi": 2,
+    "no-tabs":"off",
+    "import/no-extraneous-dependencies":"off",
+    "guard-for-in":"off",
+    "no-console":"off",
+    "prefer-object-spread":1,
+    "arrow-parens":"off",
+    "no-floating-decimal":"off",
+    "no-unused-expressions":"off",
+    "comma-dangle":"off"
+
+  }
+}
