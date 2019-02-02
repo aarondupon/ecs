@@ -59,6 +59,10 @@ module.exports = {
           loader: 'ts-loader',
         },
       },
+      {
+        test: /\.(glsl|frag|vert)$/,
+        loaders: ['raw-loader', 'glslify-loader'],
+      }
     ],
   },
 };

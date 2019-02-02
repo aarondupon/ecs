@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'OlympicBranding';
+    src: url('/assets/fonts/OlympicBranding/OlympicBranding.eot');
+    src: url('/assets/fonts/OlympicBranding/OlympicBranding.eot') format('embedded-opentype'),
+         url('/assets/fonts/OlympicBranding/OlympicBranding.woff2') format('woff2'),
+         url('/assets/fonts/OlympicBranding/OlympicBranding.woff') format('woff'),
+         url('/assets/fonts/OlympicBranding/OlympicBranding.ttf') format('truetype'),
+         url('/assets/fonts/OlympicBranding/OlympicBranding.svg#OlympicBranding') format('svg');
+}
