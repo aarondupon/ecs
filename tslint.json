@@ -4,6 +4,7 @@
     "jsRules": {
     },
     "rules": {
+        "no-increment-decrement":false
     },
     "rulesDirectory": []
     

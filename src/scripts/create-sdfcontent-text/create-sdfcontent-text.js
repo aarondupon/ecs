@@ -19,8 +19,10 @@ import createStyle from './create-style';
 import createLayout from './create-layout';
 import createStyleIndex from './create-style-index';
 import * as vertices from './vertices';
+import { createContainer, composeContainer } from '../GLContainer';
 
 
+// ECS -> MVC
 const mesh = {
   positions: [
     [0.0, 0.0, 0.0],
@@ -95,41 +97,66 @@ function loadAssets(style, cb) {
       });
 }
 
-function draw(camera) {
-    const {
-      geo, shader, gl, model
-    } = this;
+const useTransform = config => (state) => {
+    const positionsState = Object.create(state, {
+            getPosition: { value: GLNode.getPosition },
+            setPosition: { value: GLNode.setPosition },
+        });
+        return positionsState;
+    };
 
 
-    this.chidren && this.children.forEach((child) => {
-        console.log('child', child);
-        child.draw(camera);
+const composeTransform = config => (metods) => {
+    const comp = Object.create(metods, {
+        getPosition: { value: GLNode.getPosition },
+        setPosition: { value: GLNode.setPosition },
     });
+    return comp;
+};
 
-    const position = this.getPosition();
-    mat4.identity(model);
-    mat4.translate(model, model, position);
-    const s = 0.5;
-    const scale = [s, s, s];
-    mat4.scale(model, model, scale);
+const composeDraw = (specs = {}) => metods => {
+    const {
+ geo, shader, gl, model
+} = specs;
 
-    shader.bind();
-    shader.uniforms.projection = camera.projection;
-    shader.uniforms.view = camera.view;
-    shader.uniforms.model = model;
-    shader.uniforms.color = [1, 0, 0];
-    // // draw the mesh
-    geo.bind(shader);
-    geo.draw(gl.POINTS);
-    geo.unbind();
-}
+    function render(camera) {
+        this.children && this.children.forEach((child) => {
+            child.draw(camera);
+        });
+
+        if (geo && shader && gl && model) {
+            const position = this.getPosition();
+            mat4.identity(model);
+            mat4.translate(model, model, position);
+            const s = 0.5;
+            const scale = [s, s, s];
+            mat4.scale(model, model, scale);
+            shader.bind();
+            shader.uniforms.projection = camera.projection;
+            shader.uniforms.view = camera.view;
+            shader.uniforms.model = model;
+            shader.uniforms.color = [1, 0, 0];
+            // // draw the mesh
+            geo.bind(shader);
+            geo.draw(gl.POINTS);
+            geo.unbind();
+           
+        }
+    }
+    
+    const comp = Object.create(metods, {
+        draw: { value: render },
+    });
+    
+    return comp;
+};
 
 function draw2(camera) {
     const {
       geo, shader, gl, model
     } = this;
-    debugger;
-    const postion = this.getPosition();
+
+    const position = this.getPosition();
     mat4.identity(model);
     mat4.translate(model, model, position);
     const s = 0.5;
@@ -153,8 +180,12 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
     let dirty = 0;
     let indexDirty = 0;
 
-
  const createGeo = (gl) => {
+    // const [ref,setRef] = useRef()
+    // useEffect(()=>{
+    //     ref.draw()
+    // })
+    // draw()
     const shader = createShader(gl, vert, frag);
     const geo = createGeometry(gl);
     const ico = icosphere(2);
@@ -166,159 +197,16 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
     geo.attr('positions', mesh.positions);
     geo.attr('cells', mesh.cells);
 
-    let containerId = 0;
-    const Container = function Container({ name }) {
-        return Object.create(Container.prototype, {
-            children: { value: GLNode.createChildren(), writable: false },
-            type: { value: 'glContainer', writable: false },
-            name: { value: name, writable: true },
-            getId: { value: GLNode.getId },
-            add: { value: GLNode.add },
-            remove: { value: GLNode.remove },
-            getParent: { value: GLNode.getParent },
-            setParent: { value: GLNode.setParent },
-            getChild: { value: GLNode.getChild },
-            uid:  { value: `${containerId ++}`, writable: false },
-        });
-    };
-
-    const createContainer = ({ child, name }) => {
-        const container = Container({ name });
-        child && container.add(child);
-        return container;
-    };
-    let nodeId = 0;
-    const createNode = (name) => {
-        const Node = function Node() {
-            return Object.create(Node.prototype, {
-                name: { value: name, writable: true },
-                type: { value: 'glNode', writable: false },
-                uid:  { value: `${nodeId ++}`, writable: false },
-            });
-        };
-        return Node(name);
-    };
-
-    // HOC
-    const HOCTransforms = config => (InnerComponent) => {
-        const Wrapped = (props) => {
-            const inner = InnerComponent(props); // other
-            const methodFuck = function () {
-                return 'fuck';
-            };
-            const comp = Object.create(inner, {
-                getPosition: { value: GLNode.getPosition },
-                setPosition: { value: GLNode.setPosition },
-            });
-            return comp;
-        };
-        return Wrapped;
-    };
-
-    // pipeable
-    const transforms = config => (inner) => {
-            const methodFuck = function () {
-                return 'fuck';
-            };
-            const comp = Object.create(inner, {
-                getPosition: { value: GLNode.getPosition },
-                setPosition: { value: GLNode.setPosition },
-            });
-            return comp;
-    };
-
-    // HOC function currying
-    const createContainerWithTransforms = HOCTransforms({})(createContainer);
-    const demo2 = createContainerWithTransforms({ child: createNode('aaron'), name: 'demo2' });
-    const demo3 = HOCTransforms({})(createContainer)({ child: createNode('david'), name: 'main' });
-    // compose right to left
-    // compose sync
-    const compose = (...fns) => x => fns.reduceRight((y, f) => f(y), x);
-    var a = compose(
-        transforms({}),
-        createContainer,
-    )({});
-
-    /*
-    <compose>
-        <transforms />
-        <colors />
-    </compose>
-    */
-
-
-    // pipe left to right
-    // pipe sync
     const pipe = (...fns) => x => fns.reduce((y, f) => f(y), x);
-    var b = pipe(
-        createContainer,
-        transforms({}),
+    const compose = (...fns) => x => fns.reduceRight((y, f) => f(y), x);
+
+    const comp2 = compose(
+        composeContainer,
+        composeTransform({}),
+        composeDraw()
     )({});
 
-    /*
-    <pipe>
-        <colors />
-        <transforms />
-    </pipe>
-    */
-
-
-    // async pipe
-    const subject = new Subject();
-    const observale = subject.pipe(
-        map(createContainer),
-        map(transforms({})));
-    observale.subscribe(x => {
-        console.log('xxxxxx', x);
-        x.getPosition()
-        // alert(x.name)
-    });
-    subject.next({child:createNode('david'),name:'main4'})
-    /*
-    <pipeAsync>
-        <colors />
-        <transforms />
-    </pipeAsync>
-    */
-
-
-
-
-    const name2 = demo2.name;
-    const type2 = demo2.type;
-    const name3 = demo3.name;
-    const type3 = demo3.type;
-    const position2 = demo2.getPosition();
-    const position3 = demo3.getPosition();
-
-
-    // node -> has a: container -> has a: -> element --> has a: transform
-
-    // const node = compose(createContainer,createNode,createTransform)
-
-
-    const Node = function () {};
-
-    const obj = Object.create(Node.prototype,
-        {
-            children: { value: GLNode.children, writable: false },
-            name: { value: 'glNode', writable: false },
-            getId: { value: GLNode.getId },
-            add: { value: GLNode.add },
-            remove: { value: GLNode.remove },
-            getParent: { value: GLNode.getParent },
-            setParent: { value: GLNode.setParent },
-            getChild: { value: GLNode.getChild },
-            getPosition: { value: GLNode.getPosition },
-            setPosition: { value: GLNode.setPosition },
-            geo: { value: geo },
-            shader: { value: shader },
-            gl: { value: gl },
-            model: { value: model },
-            draw: { value: draw }
-        });
-
-    return obj;
+    return comp2;
   };
 
   const createGeo2 = (gl) => {
@@ -442,6 +330,8 @@ sizes, uvs, colors, positions
             // const textGeo = createTextMesh(gl,mesh);
             const square = createGeo2(gl);
             node.add(square);
+            const text = createGeo(gl);
+            node.add(text);
 
             console.log(node);
             // glElement.source(SDFTextContent(gl, props));

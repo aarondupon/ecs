@@ -53,33 +53,33 @@ export default function scene(gl, images) {
 
   return function draw(time, camera) {
     // move our light around
-    light.position[0] = -Math.sin(time / 2) * 0.9;
-    light.position[1] = Math.sin(time / 2) * 0.3;
-    light.position[2] = 0.5 + Math.sin(time / 2) * 2;
+    // light.position[0] = -Math.sin(time / 2) * 0.9;
+    // light.position[1] = Math.sin(time / 2) * 0.3;
+    // light.position[2] = 0.5 + Math.sin(time / 2) * 2;
 
     
 
     // bind our textures to the correct slots
-    diffuse.bind(0);
-    normal.bind(1);
-    specular.bind(2);
+    // diffuse.bind(0);
+    // normal.bind(1);
+    // specular.bind(2);
 
-    // draw our phong mesh
-    mesh.light = light;
-    mesh.draw(camera);
+    // // draw our phong mesh
+    // mesh.light = light;
+    // mesh.draw(camera);
 
     text.draw(camera);
-    // text.position = light.position;
+    // // text.position = light.position;
 
-    // sphere.position = light.position;
-    // sphere.color = light.color;
-    // sphere.light = light;
-    // sphere.draw(camera);
+    // // sphere.position = light.position;
+    // // sphere.color = light.color;
+    // // sphere.light = light;
+    // // sphere.draw(camera);
 
-    // // group.children.forEach(element => {
+    // // // group.children.forEach(element => {
     
-    group.position = light.position;
-    group.source.draw(camera);
+    // group.position = light.position;
+    // group.source.draw(camera);
     // // });
     
 
