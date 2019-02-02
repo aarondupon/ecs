@@ -54,17 +54,9 @@ export function getChild(id: number): IGLContainer | null {
   return this.children.get(id) || null;
 }
 
-export function createContainer({ child, name }):IGLContainer {
-
-  const container = GLContainer();
-  child && container.add(child);
-  name && (container.name = name);
-  return container;
-}
-
-function GLContainer(methods?:object):IGLContainer {
-
-  return Object.create(GLContainer.prototype, {
+const composition = config => (metods?:object) => {
+  const comp  = {
+    ...metods,
     children: { value: createChildren(), writable: false },
     parent: { value: undefined, writable: true },
     type: { value: 'glContainer', writable: false },
@@ -76,10 +68,8 @@ function GLContainer(methods?:object):IGLContainer {
     setParent: { value: setParent },
     getChild: { value: getChild },
     uid:  { value: `${getuid()}`, writable: false },
-    ...methods,
-  });
-}
+  };
+  return comp;
+};
 
-export function composeContainer(methods):IGLContainer {
-  return GLContainer(methods);
-}
+export default composition;

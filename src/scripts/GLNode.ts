@@ -76,16 +76,7 @@ function  calcTransform() {
   this.transform = mat4.fromRotationTranslationScale(this.transform, this.orientation, this.position, this.scale);
 }
 
-export function  getTransform(): mat4 {
-// First calculates the transform, then returns a defensive clone of it
-  this.calcTransform();
-  return mat4.clone(this.transform);
-}
 
-export function   getPosition(): vec3 {
-// Defensive clone
-  return vec3.clone(this.position || [0, 0, 0]);
-}
 
 export function getDistFrom(point: vec3): number {
 // Returns a number

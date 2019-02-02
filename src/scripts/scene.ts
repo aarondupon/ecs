@@ -4,6 +4,7 @@ import createSdfcontentText from './create-sdfcontent-text/index';
 import * as createTexture from 'gl-texture2d';
 import GLElement from './GLElement';
 import * as hex2rgb from 'hex2rgb';
+import DrawSystem from './system/DrawSystem'
 /*
   Brings together the textures, mesh, and lights into a unified scene.
  */
@@ -51,7 +52,8 @@ export default function scene(gl, images) {
     ambient: hex2rgb('#0a040b').rgb,
   };
 
-  return function draw(time, camera) {
+  return function updateScene(time, camera) {
+     DrawSystem.update(time,camera)
     // move our light around
     // light.position[0] = -Math.sin(time / 2) * 0.9;
     // light.position[1] = Math.sin(time / 2) * 0.3;
@@ -68,7 +70,7 @@ export default function scene(gl, images) {
     // mesh.light = light;
     // mesh.draw(camera);
 
-    text.draw(camera);
+    if( text.draw ) text.draw(camera);
     // // text.position = light.position;
 
     // // sphere.position = light.position;

@@ -20,7 +20,7 @@ export default function renderer(images) {
   });
 
   // create our custom scene
-  const drawScene = createScene(gl, images);
+  const updateScene = createScene(gl, images);
 
   var time = 0;
   app.start();
@@ -54,7 +54,7 @@ export default function renderer(images) {
     camera.viewport = [0, 0, width, height];
     camera.update();
     // draw our scene
-    drawScene(time, camera);
+    updateScene(time, camera);
   }
  
 //   return Object.assign(app, { canvas, gl });

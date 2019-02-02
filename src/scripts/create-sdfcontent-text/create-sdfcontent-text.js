@@ -20,7 +20,16 @@ import createLayout from './create-layout';
 import createStyleIndex from './create-style-index';
 import * as vertices from './vertices';
 import { createContainer, composeContainer } from '../GLContainer';
+import { draw, translate, composition } from '../behaviors';
+import createElement from '../compose/createElement';
+import registerElement from '../compose/registerElement';
+import pipe from '../compose/pipe';
+import compose from '../compose/compose';
 
+const createRegisterdElement = (...behaviors) => (props) =>{
+    const element = createElement(...behaviors)(props)
+    return registerElement(element)
+}
 
 // ECS -> MVC
 const mesh = {
@@ -97,151 +106,47 @@ function loadAssets(style, cb) {
       });
 }
 
-const useTransform = config => (state) => {
-    const positionsState = Object.create(state, {
-            getPosition: { value: GLNode.getPosition },
-            setPosition: { value: GLNode.setPosition },
-        });
-        return positionsState;
-    };
-
-
-const composeTransform = config => (metods) => {
-    const comp = Object.create(metods, {
-        getPosition: { value: GLNode.getPosition },
-        setPosition: { value: GLNode.setPosition },
-    });
-    return comp;
-};
-
-const composeDraw = (specs = {}) => metods => {
-    const {
- geo, shader, gl, model
-} = specs;
-
-    function render(camera) {
-        this.children && this.children.forEach((child) => {
-            child.draw(camera);
-        });
-
-        if (geo && shader && gl && model) {
-            const position = this.getPosition();
-            mat4.identity(model);
-            mat4.translate(model, model, position);
-            const s = 0.5;
-            const scale = [s, s, s];
-            mat4.scale(model, model, scale);
-            shader.bind();
-            shader.uniforms.projection = camera.projection;
-            shader.uniforms.view = camera.view;
-            shader.uniforms.model = model;
-            shader.uniforms.color = [1, 0, 0];
-            // // draw the mesh
-            geo.bind(shader);
-            geo.draw(gl.POINTS);
-            geo.unbind();
-           
-        }
-    }
-    
-    const comp = Object.create(metods, {
-        draw: { value: render },
-    });
-    
-    return comp;
-};
-
-function draw2(camera) {
-    const {
-      geo, shader, gl, model
-    } = this;
-
-    const position = this.getPosition();
-    mat4.identity(model);
-    mat4.translate(model, model, position);
-    const s = 0.5;
-    const scale = [s, s, s];
-    mat4.scale(model, model, scale);
-
-    shader.bind();
-    shader.uniforms.projection = camera.projection;
-    shader.uniforms.view = camera.view;
-    shader.uniforms.model = model;
-    shader.uniforms.color = [1, 0, 0];
-
-    // // draw the mesh
-    geo.bind(shader);
-    geo.draw(gl.POINTS);
-    geo.unbind();
-}
-
 
 const SDFTextContent = (gl, props = { width: 200 }) => {
     let dirty = 0;
     let indexDirty = 0;
+    const createNullObject = (gl) => {
+        const shader = createShader(gl, vert, frag);
+        const geo = createGeometry(gl);
+        const ico = icosphere(2);
 
- const createGeo = (gl) => {
-    // const [ref,setRef] = useRef()
-    // useEffect(()=>{
-    //     ref.draw()
-    // })
-    // draw()
-    const shader = createShader(gl, vert, frag);
-    const geo = createGeometry(gl);
-    const ico = icosphere(2);
+        const model = mat4.create();
+        const s = 0.05;
+        const scale = [s, s, s];
 
-    const model = mat4.create();
-    const s = 0.05;
-    const scale = [s, s, s];
+        geo.attr('positions', mesh.positions);
+        geo.attr('cells', mesh.cells);
 
-    geo.attr('positions', mesh.positions);
-    geo.attr('cells', mesh.cells);
+        return createRegisterdElement(
+            composition(),
+            translate(),
+            )({});
+    };
+    const createSquare = (gl) => {
+        const shader = createShader(gl, vert, frag);
+        const geo = createGeometry(gl);
+        const ico = icosphere(2);
 
-    const pipe = (...fns) => x => fns.reduce((y, f) => f(y), x);
-    const compose = (...fns) => x => fns.reduceRight((y, f) => f(y), x);
+        const model = mat4.create();
+        const s = 0.05;
+        const scale = [s, s, s];
 
-    const comp2 = compose(
-        composeContainer,
-        composeTransform({}),
-        composeDraw()
-    )({});
+        geo.attr('positions', mesh.positions);
+        geo.attr('cells', mesh.cells);
 
-    return comp2;
-  };
-
-  const createGeo2 = (gl) => {
-    const shader = createShader(gl, vert, frag);
-    const geo = createGeometry(gl);
-    const ico = icosphere(2);
-
-    const model = mat4.create();
-    const s = 0.05;
-    const scale = [s, s, s];
-
-    geo.attr('positions', mesh2.positions);
-    geo.attr('cells', mesh2.cells);
-
-    const Node = function () {};
-    return Object.create(Node.prototype,
-        {
-            name: { value: 'aaron', writable: false },
-            getId: { value: GLNode.getId },
-            add: { value: GLNode.add },
-            remove: { value: GLNode.remove },
-            getParent: { value: GLNode.getParent },
-            setParent: { value: GLNode.setParent },
-            getChild: { value: GLNode.getChild },
-            getPosition: { value: GLNode.getPosition },
-            setPosition: { value: GLNode.setPosition },
-            geo: { value: geo },
-            shader: { value: shader },
-            gl: { value: gl },
-            model: { value: model },
-            draw: { value: draw2 }
-        });
-  };
-
-
+        return createRegisterdElement(
+            composition(),
+            translate(),
+            draw({
+                shader, geo, model, gl,
+                })
+            )({});
+    };
   const createTextMesh = (gl, mesh) => {
     const shader = createShader(gl, vert, frag);
     const geo = createGeometry(gl);
@@ -313,14 +218,12 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
         indexDirty++;
 
         return {
-sizes, uvs, colors, positions
- };
-  };
+        sizes, uvs, colors, positions
+        };
+    };
     const create = gl => {
         const styles = createStyle(myStyles, { width: 200, breakWords: true });
-        const node = createGeo(gl, styles);
-
-
+        const node = createElement(composition())();
         const assets = loadAssets(styles, (font, image) => {
             // const text =  'Hi I am a computer, taking over the world!';
             // const buffers = createBuffers(styles,text,font)
@@ -328,16 +231,14 @@ sizes, uvs, colors, positions
             //     positions:buffers.positions
             // }
             // const textGeo = createTextMesh(gl,mesh);
-            const square = createGeo2(gl);
-            node.add(square);
-            const text = createGeo(gl);
-            node.add(text);
+            const square = createSquare(gl);
 
-            console.log(node);
-            // glElement.source(SDFTextContent(gl, props));
+            const text = createSquare(gl);
+            if (node.add) {
+                node.add(square);
+                node.add(text);
+            }
         });
-
-
         // compose return object
         return node;
   };

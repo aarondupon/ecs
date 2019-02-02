@@ -3,8 +3,17 @@
     "defaultSeverity": "warn",
     "jsRules": {
     },
+  
     "rules": {
-        "no-increment-decrement":false
+        "no-increment-decrement":false,
+        "ter-arrow-parens": false,
+        "function-name": [true, {
+            "method-regex": "^\\*?\\[?[a-zA-Z][\\w\\d\\.]*\\]?$",
+            "private-method-regex": "^\\*?\\[?[a-zA-Z][\\w\\d\\.]*\\]?$",
+            "protected-method-regex": "^\\*?\\[?[a-zA-Z][\\w\\d\\.]*\\]?$",
+            "static-method-regex": "^\\*?\\[?[a-zA-Z][\\w\\d\\.]*\\]?$",
+            "function-regex": "^\\*?\\[?[a-zA-Z][\\w\\d\\.]*\\]?$"
+          }]
     },
     "rulesDirectory": []
     
