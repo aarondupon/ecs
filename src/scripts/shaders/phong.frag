@@ -86,7 +86,7 @@ void main() {
   color += diffuseColor * (diffuse + ambient) + specular;
 
   //re-apply gamma to output buffer
-  color = vec3(1.0,0.0,0.0);//toGamma(color);
+  color = toGamma(color) ;// vec3(1.0,0.0,0.0);
   gl_FragColor.rgb = color;
   gl_FragColor.a = 1.0;
 }

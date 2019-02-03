@@ -13,23 +13,14 @@ import { Subject, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import vert from './shaders/basic.vert';
 import frag from './shaders/basic.frag';
-import GLElement from '../GLElement';
-import * as GLNode from '../GLNode';
 import createStyle from './create-style';
 import createLayout from './create-layout';
 import createStyleIndex from './create-style-index';
 import * as vertices from './vertices';
-import { createContainer, composeContainer } from '../GLContainer';
 import { draw, translate, composition } from '../behaviors';
 import createElement from '../compose/createElement';
 import registerElement from '../compose/registerElement';
-import pipe from '../compose/pipe';
-import compose from '../compose/compose';
 
-const createRegisterdElement = (...behaviors) => (props) =>{
-    const element = createElement(...behaviors)(props)
-    return registerElement(element)
-}
 
 // ECS -> MVC
 const mesh = {
@@ -106,57 +97,94 @@ function loadAssets(style, cb) {
       });
 }
 
-
-const SDFTextContent = (gl, props = { width: 200 }) => {
-    let dirty = 0;
-    let indexDirty = 0;
-    const createNullObject = (gl) => {
-        const shader = createShader(gl, vert, frag);
-        const geo = createGeometry(gl);
-        const ico = icosphere(2);
-
-        const model = mat4.create();
-        const s = 0.05;
-        const scale = [s, s, s];
-
-        geo.attr('positions', mesh.positions);
-        geo.attr('cells', mesh.cells);
-
-        return createRegisterdElement(
-            composition(),
-            translate(),
-            )({});
-    };
-    const createSquare = (gl) => {
-        const shader = createShader(gl, vert, frag);
-        const geo = createGeometry(gl);
-        const ico = icosphere(2);
-
-        const model = mat4.create();
-        const s = 0.05;
-        const scale = [s, s, s];
-
-        geo.attr('positions', mesh.positions);
-        geo.attr('cells', mesh.cells);
-
-        return createRegisterdElement(
-            composition(),
-            translate(),
-            draw({
-                shader, geo, model, gl,
-                })
-            )({});
-    };
-  const createTextMesh = (gl, mesh) => {
+const createNullObject = (gl) => {
     const shader = createShader(gl, vert, frag);
     const geo = createGeometry(gl);
     const ico = icosphere(2);
+
+    const model = mat4.create();
+    const s = 0.05;
+    const scale = [s, s, s];
+
+    geo.attr('positions', mesh.positions);
+    geo.attr('cells', mesh.cells);
+
+    const comp = createElement(
+        composition(),
+        translate(),
+        )({});
+    return registerElement(comp)
+};
+
+const fakeCamera = window.camera;
+
+const createSquare = (gl,rect= [1.5,1.5]) => {
+    const shader = createShader(gl, vert, frag);
+    const geo = createGeometry(gl);
+    const model = mat4.create();
+    const s = 0.5;
+    const scale = [s, s, s];
+    const {width:viewWidth,height:viewHeight} = gl.canvas
+
+
+ 
+    
+
+    var cameraZ = 1;
+    var planeZ = 5;
+    var distance = 1;
+
+    const x2 = rect[0]* 2.2 ;// * planeHeightAtDistance ;
+    const y2 = rect[1] * 2.2;// * planeWidthAtDistance ;
+    
+    const mesh = {
+            cells:[
+                [0, 1, 2],
+                [1, 2, 3],
+                [1, 2, 3],
+                [1, 2, 3]
+              ],
+            positions:  [
+                [0.0,       0.0,    0.0],
+                [x2,         0.0,    0.0],
+                [x2,         y2,    0.0],
+                [0.0,        y2,    0.0]
+            ]
+        }
+
+    geo.attr('positions', mesh.positions);
+    geo.attr('cells', mesh.cells);
+    // geo.attr('scale', scale);
+
+    const comp = createElement(
+        composition(),
+        translate(),
+        draw({
+            shader, geo, model, gl,
+            })
+        )({});
+    return registerElement(comp)
+};
+
+
+const createText =(gl, mesh) => {
+    const shader = createShader(gl, vert, frag);
+    const geo = createGeometry(gl);
+    const model = mat4.create();
     geo.attr('positions', mesh.positions);
     // geo.attr('cells', mesh.cells);
     const position = [0, 0, 0];
     const scale = [1, 1];
-    const glElement = GLElement.from(geo);
-    return { geo, shader, glElement };
+
+    const comp =  createElement(
+        composition(),
+        translate(),
+        draw({
+            shader, geo, model, gl,
+            })
+    )({});
+    return registerElement(comp);
+    
   };
 
   const createBuffers = (style, text, font) => {
@@ -214,29 +242,37 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
         // aarondupon.be
         // const sizes = new Float32Array(sizes);
         // console.log(uvs)
-        dirty++;
-        indexDirty++;
+
 
         return {
         sizes, uvs, colors, positions
         };
     };
+
+const SDFTextContent = (gl, props = { width: 200 }) => {
+    let dirty = 0;
+    let indexDirty = 0;
+   
+
     const create = gl => {
         const styles = createStyle(myStyles, { width: 200, breakWords: true });
         const node = createElement(composition())();
+        // registerElement(node)
         const assets = loadAssets(styles, (font, image) => {
-            // const text =  'Hi I am a computer, taking over the world!';
-            // const buffers = createBuffers(styles,text,font)
-            // const mesh = {
-            //     positions:buffers.positions
-            // }
-            // const textGeo = createTextMesh(gl,mesh);
+            const txt =  'Hi I am a computer, taking over the world!';
+            const buffers = createBuffers(styles,txt,font)
+            const mesh = {
+                positions:buffers.positions
+            }
+            const text = createText(gl,mesh);
             const square = createSquare(gl);
 
-            const text = createSquare(gl);
+            dirty++;
+            indexDirty++;
+
             if (node.add) {
-                node.add(square);
-                node.add(text);
+                // node.add(square);
+                // node.add(text);
             }
         });
         // compose return object

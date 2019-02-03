@@ -43,6 +43,7 @@ function DrawSystem() {
   const fpsController = new FpsController();
   const unitSize = 0;
   const _pool = [];
+  let time = Date.now();
 
   function initialize(options) {
 
@@ -64,14 +65,16 @@ function DrawSystem() {
   function read(ptr) {
     return results.slice(ptr, ptr + 1);
   }
-  function update(time, camera) {
-
-    if (fpsController.checkfps(60, 1)) {
+  function render(gl, updateTime, camera) {
+        time = updateTime
+    // if (fpsController.checkfps(1, 1)) {
+      
       for (let i = 0; i < bufferCount; i += 1) {
         const drawElements =  pointers.get(i);
+
         drawElements.draw(camera);
       }
-    }
+    // }
 
   }
 
@@ -79,8 +82,9 @@ function DrawSystem() {
     add,
     remove,
     read,
-    update,
+    render,
     setPool,
+    time,
   });
 }
 

@@ -2,6 +2,9 @@ import context from 'webgl-context';
 import loop from 'canvas-loop';
 import createCamera from 'perspective-camera';
 import createScene from './scene';
+import DrawSystem from './system/DrawSystem';
+import ECSDrawSystem from './system/ECSDrawSystem';
+import ECSTranslateSystem from './system/ECSTranslateSystem';
 
 export default function renderer(images) {
     
@@ -10,7 +13,7 @@ export default function renderer(images) {
   const app = loop(canvas, {
     scale: window.devicePixelRatio
   }).on('tick', render);
-
+// alert(window.devicePixelRatio)
   // create a simple perspective camera
   // contains our projection & view matrices
   const camera = createCamera({
@@ -18,6 +21,9 @@ export default function renderer(images) {
     near: 0.01,
     far: 100
   });
+ 
+     
+
 
   // create our custom scene
   const updateScene = createScene(gl, images);
@@ -27,6 +33,8 @@ export default function renderer(images) {
 
   app.canvas = canvas;
   app.gl = gl;
+
+
   return app;
 
   function render(dt) {
@@ -37,17 +45,12 @@ export default function renderer(images) {
 
     // set WebGL viewport to device size
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-
-    gl.clearColor(0.04, 0.04, 0.04, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // rotate the camera around origin
     const rotation = 90 * Math.PI / 180;// Math.PI / 4 + time * 0.2;
     const radius = 4;
-    const x = Math.cos(rotation) * radius;
-    const z = Math.sin(rotation) * radius;
+    const x = 0;//Math.cos(rotation) * radius;
+    const z = Math.PI;//Math.sin(rotation) * radius;
     camera.identity();
     camera.translate([x, 0, z]);
     camera.lookAt([0, 0, 0]);
@@ -55,6 +58,12 @@ export default function renderer(images) {
     camera.update();
     // draw our scene
     updateScene(time, camera);
+
+
+    DrawSystem.render(gl, time, camera);
+    ECSTranslateSystem.render(gl, time, camera);
+    ECSDrawSystem.render(gl, time, camera);
+
   }
  
 //   return Object.assign(app, { canvas, gl });

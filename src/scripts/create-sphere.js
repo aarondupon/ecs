@@ -50,5 +50,4 @@ export default function create(gl) {
     geom.draw(gl.POINTS);
     geom.unbind();
   }
-}
-;
+};

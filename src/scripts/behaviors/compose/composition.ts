@@ -1,12 +1,10 @@
 let CONTAINTER_UID = 0;
-// const chidrenHook = new Map<number,Map<number,any>>();
 
 declare interface IGLContainer{
   type:string;
   name?: string;
   getId: any;
   add:any;
-  parent:any;
   remove: any;
   getParent: any;
   setParent: any;
@@ -14,50 +12,62 @@ declare interface IGLContainer{
   uid: any;
 }
 
+declare interface IState{
+  children:Map<number, IGLContainer>;
+  uid:number;
+  parent?:IGLContainer;
+
+}
+
+class Children extends Map<number, IGLContainer>{}
+
 function getuid() {
   return ++ CONTAINTER_UID;
 }
 
-export function getId(): number {
-  return this.uid;
-}
-
-class Children extends Map<number, IGLContainer>{}
-export function createChildren() {
+function createChildren() {
   return new Children();
 }
 
-// Expects the child to also be a GLNode
-export function  add(child: IGLContainer): number {
-  const id = this.children.size;
-  console.log('this.children.size;', this.children.size);
-  this.children.set(id, child);
-  return id;
-}
+const composition = (config?:object) => (metods?:object) => {
 
-export function remove(child: IGLContainer): IGLContainer {
-  this.children && this.children.delete(child.getId());
-  return this;
-}
+  const state:IState = {
+    children:createChildren(),
+    uid:getuid(),
+  };
+  function getId(): number {
+    return state.uid;
+  }
 
-export function setParent(parent: IGLContainer) {
-  this.parent = parent;
-}
+  function  add(child: IGLContainer): number {
 
-  // Returns null if node is an orphan
-export function getParent(): IGLContainer | null {
-  return this.parent;
-}
+    const id = state.children.size;
+    console.log('state.children.size;', state.children.size);
+    state.children.set(id, child);
+    return id;
+  }
 
-  // Returns null if the id isn't present
-export function getChild(id: number): IGLContainer | null {
-  return this.children.get(id) || null;
-}
+  function remove(child: IGLContainer): IGLContainer {
+    this.children &&  state.children.delete(child.getId());
+    return this;
+  }
 
-const composition = config => (metods?:object) => {
+  function setParent(parent: IGLContainer) {
+    state.parent = parent;
+  }
+
+// Returns null if node is an orphan
+  function getParent(): IGLContainer | null {
+    return state.parent;
+  }
+
+// Returns null if the id isn't present
+  function getChild(id: number): IGLContainer | null {
+    return state.children.get(id) || null;
+  }
   const comp  = {
     ...metods,
-    children: { value: createChildren(), writable: false },
+    children: { value: state.children, writable: false },
     parent: { value: undefined, writable: true },
     type: { value: 'glContainer', writable: false },
     name: { value: name, writable: true },

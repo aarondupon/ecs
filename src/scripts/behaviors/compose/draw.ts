@@ -30,7 +30,7 @@ const draw = (specs:IDrawObject = {}) => (metods:any) => {
       shader.uniforms.view = camera.view;
       shader.uniforms.model = model;
       shader.uniforms.color = [1, 0, 0];
-            // // draw the mesh
+      // draw the mesh
       geo.bind(shader);
       geo.draw(gl.POINTS);
       geo.unbind();

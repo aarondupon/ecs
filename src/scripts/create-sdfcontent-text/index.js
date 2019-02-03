@@ -1,1 +1,2 @@
-export { default } from './create-sdfcontent-text';
+import createSdfcontentText from './create-sdfcontent-text';
+export default createSdfcontentText;
