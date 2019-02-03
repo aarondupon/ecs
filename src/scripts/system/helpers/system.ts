@@ -1,45 +1,47 @@
 
-import { connect } from '../utils';
-import createState from './state';
+import { connect } from './utils';
+import { default as createState } from './state';
+// import FpsController from './FpsController';
+// fpsController: new FpsController(),
 
-function setPool(state, elements) {
-  state.pointers.table = elements;
-}
-
-function add(state, index) {
-  state.bufferCount += 1;
-  state.pointers.add(index);
-}
-function remove(state, ptr) {
-  state.bufferCount -= 1;
-  state.pointers.remove(ptr);
-}
-function read(state, ptr) {
-  return state.results.slice(ptr, ptr + 1);
-}
-function render(update, state, gl, updateTime, camera) {
-  // if (fpsController.checkfps(1, 1)) {
-  for (let i = 0; i < state.bufferCount; i += 1) {
-    const data =  state.pointers.get(i);
-    update(gl, data, camera, data.uid);
-  }
-  // }
-
-}
-
+let UID = 0;
 function createSytstem(update) {
   const state  = createState();
 
-  const methods = connect(state, {
+  function setPool(elements) {
+    state.POINTERS_TO_ELEMENTS.table = elements;
+  }
+
+  function add(index) {
+    state.bufferCount += 1;
+    state.POINTERS_TO_ELEMENTS.add(index);
+  }
+  function remove(ptr) {
+    state.bufferCount -= 1;
+    state.POINTERS_TO_ELEMENTS.remove(ptr);
+  }
+
+  function render(gl, updateTime, camera) {
+      // console.log('this',state)
+    // if (fpsController.checkfps(1, 1)) {
+    // console.log(UID, state.POINTERS_TO_ELEMENTS.pointers);
+    for (let i = 0; i < state.bufferCount; i += 1) {
+      const data =  state.POINTERS_TO_ELEMENTS.get(i);
+      update(gl, data, camera, data.uid);
+    }
+    // }
+
+  }
+
+  return Object.freeze({
     add,
     remove,
-    read,
-    // @ts-ignore
-    render:(...args) => render(update, ...args),
     setPool,
+    render,
+    time:state.time,
+    id:++UID,
   });
-  methods.time = state.time;
-  return Object.freeze(methods);
+
 }
 
 export default createSytstem;

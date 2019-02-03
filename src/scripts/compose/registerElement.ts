@@ -18,7 +18,6 @@ const registerElement = (element) => {
   elements.set(pointer, element);
 
   if (typeof element.draw === 'function') {
-
     DrawSystem.add(pointer);
   }
   if (typeof element.draw === 'string' || element.draw instanceof String) {

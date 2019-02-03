@@ -1,13 +1,12 @@
-import POINTERS_TO_ELEMENTS from '../POINTERS_TO_ELEMENTS';
-import FpsController from '../FpsController';
+import POINTERS_TO_ELEMENTS from './POINTERS_TO_ELEMENTS';
 
-const state  = {
+const createState = () => {
+  const state  = {
     bufferCount: 0,
-    pointers: POINTERS_TO_ELEMENTS(),
+    POINTERS_TO_ELEMENTS: POINTERS_TO_ELEMENTS(),
     results: [],
-    fpsController: new FpsController(),
     time: Date.now(),
   };
-
-const createState = () => Object.create(state);
+  return state;
+};
 export default createState;

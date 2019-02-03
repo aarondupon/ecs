@@ -81,11 +81,8 @@ export default function scene(gl, images) {
   const [diffuse, normal, specular] = textures;
 
   return function updateScene(time, camera) {
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-
-    gl.clearColor(0.04, 0.04, 0.04, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   
+   
 
     // move our light around
     light.position[0] = -Math.sin(time / 2) * 0.9;
