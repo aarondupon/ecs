@@ -25,19 +25,14 @@ function loadBehaviors() {
       if( !window[name]) {
         window[name] = name;
         const ESCSystem  = createSytstem(function(gl, data, camera,uid){
-            // console.log('name',uid,behavior.default.name)
-            behavior.update(gl, data, camera,uid)
-            
+            behavior.update(gl, data, camera,uid)          
         }, name);
-        // console.log('behavior.default.name',behavior.default.name,behavior.update)
-        // const ESCSystem = createSytstem(behavior.update)
+  
         ESCSystem.setPool(elements)
-        // ESCSystem.update2 = behavior.update.bind(ESCSystem)
         console.log('ESCSystem');
         ECSSystems.push(ESCSystem);
       }
 
-      
     
       ready = true;
       

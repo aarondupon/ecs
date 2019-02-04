@@ -50,8 +50,6 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     complex.cells && geom.faces(complex.cells);
     DRAW_LIBRARY.set(uid, { geom, shaders });
 
-    console.log('createShader',uid)
-
   }
   const { shaders, geom } = DRAW_LIBRARY.get(uid);
 
