@@ -4,12 +4,21 @@ import createSdfcontentText from './create-sdfcontent-text';
 import * as createTexture from 'gl-texture2d';
 import {default as hex } from 'hex2rgb';
 import { drawChildren, translate, composition } from './behaviors';
-import {drawBehavior,translateBehavior} from './behaviors';
+import {drawBehavior, translateBehavior, composotionBehavior} from './behaviors';
 
 import createElement from './compose/createElement';
 import createESCElement from './compose/createESCElement';
-
 import registerElement from './compose/registerElement';
+import {timer} from 'rxjs';
+import { animationFrame } from 'rxjs/scheduler/animationFrame';
+import {scan} from 'rxjs/operators'
+
+
+function raf(step = 1000) {
+  return timer(0, 1000 / step, animationFrame).pipe(
+      scan((total, value, index) => total + 1, 0));
+}
+
 
 var hex2rgb = (str) => {
   return hex(str).rgb.map(x => x/255)
@@ -29,13 +38,40 @@ export default function scene(gl, images) {
   // the 3D objects for our scene
 
   const thorus = createESCElement(
+    composotionBehavior(),
     drawBehavior(),
     translateBehavior(),
   )(createTorus())
 
+  const dot = createESCElement(
+    composotionBehavior(),
+    drawBehavior(),
+    translateBehavior(),
+  )(createSphere())
+
+  dot.parent = thorus
+  dot.position = [0,0,0]
+  dot.color = hex2rgb('#CC00CC');
   
+
+  registerElement(dot);
+  registerElement(thorus);
+
+  
+  // dot2.position = [0,0,0]
+  // dot2.color = hex2rgb('#CC00CC');
+  // dot2.parent = thorus
+  
+
+  registerElement(dot);
   registerElement(thorus);
   
+  raf(60).subscribe(
+    (time)=>{
+      dot.position = [0,Math.sin(time/10)/3,2*Math.sin(time/10)]
+      // dot2.position = [0,Math.sin(time/10)/3,2*Math.sin(time/10)]
+    }
+  )
 
 
   const sphere = createSphere(gl);
@@ -86,8 +122,8 @@ export default function scene(gl, images) {
 
     // move our light around
     light.position[0] = -Math.sin(time / 2) * 0.9;
-    light.position[1] = Math.sin(time / 2) * 0.3;
-    light.position[2] = 0.5 + Math.sin(time / 2) * 2;
+    light.position[1] = -.5+(Math.sin(time / 2) *2);//* 0.3;
+    light.position[2] = 0.5 + Math.sin(time / 2) ;
 
     // bind our textures to the correct slots
     diffuse.bind(0);

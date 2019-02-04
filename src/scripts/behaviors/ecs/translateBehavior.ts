@@ -9,30 +9,23 @@ export const update = (gl, element:any = {}, camera:any, uid:number) => {
   if (!LIBRARY.get(uid)) {
     const position = element.position || vec3.create();
     element.model = element.model || mat4.create();
+    // element.position = vec3.create()
     LIBRARY.set(uid, position);
   }
-
+//   const position = LIBRARY.get(uid);
   const model = element.model;
   mat4.identity(model);
   mat4.translate(model, model, element.position);
 
   //update model
-  element.shaders.forEach(shader => {
+  element.shaders && element.shaders.forEach(shader => {
     shader.uniforms.model = model;
   });
-
+  console.log('translate',element.position)
+//   LIBRARY.set(uid,position);
  
 
 };
-
-export function setTranslate(element:Itranslate, position: vec3): vec3 {
-  element.position = position;
-}
-
-export function   getTranslate(element:Itranslate): vec3 {
-// Defensive clone
-  return vec3.clone(element.position);
-}
 
 /**
  * composable behavior for craeteElement pipeline
@@ -46,5 +39,7 @@ const translateBehavior = (specs:any = {}) => (metods:any) => {
   };
   return comp;
 };
+
+export const rule = (element)=>(typeof element.translate === 'string' || element.translate instanceof String) 
 
 export default translateBehavior;

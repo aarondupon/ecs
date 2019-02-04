@@ -8,7 +8,7 @@ class Style{
         this.styles = styles;
     }
     styleAtIdx(charIdx){
-        console.log('styleAtIdx',charIdx,this.styles)
+        // console.log('styleAtIdx',charIdx,this.styles)
         const res  = this.styles.filter(x=>x.styleIdx <= charIdx )
         
         return res[res.length-1];

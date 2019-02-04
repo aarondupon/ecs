@@ -7,47 +7,33 @@ import icosphere from 'icosphere';
 import vert from './shaders/basic.vert';
 import frag from './shaders/basic.frag';
 
-export default function create(gl) {
-  // create our shader
-  const shader = createShader(gl, vert, frag);
-
+export default function create(size = 1) {
   // set up a sphere geometry
-  const mesh = icosphere(2);
-  const geom = createGeometry(gl)
-    .attr('position', mesh.positions)
-    .faces(mesh.cells);
-
+  const complex = icosphere(4);
+  
   // the model-space transform for our sphere
   const model = mat4.create();
-  const s = 0.05;
-  const scale = [s, s, s];
+  const s = 1;//0.05;
 
   const sphere = {
+    complex,
     position: [0, 0, 0],
     color: [1, 0, 0],
-    draw
+    scale: [s, s, s],
+    shaders: [
+      {
+        vert,
+        frag,
+        uniforms: {
+          projection: new Float32Array(16),
+          view: new Float32Array(16),
+          model, // our model-space transformations
+          color: [1, 0, 0],
+          drawMode: ['POINTS'],
+       }
+     }
+     ]
   };
 
   return sphere;
-
-  function draw(camera) {
-    // set up our model matrix
-    mat4.identity(model);
-    mat4.translate(model, model, sphere.position);
-    mat4.scale(model, model, scale);
-
-    // set our uniforms for the shader
-    shader.bind();
-    shader.uniforms.projection = camera.projection;
-    shader.uniforms.view = camera.view;
-    shader.uniforms.model = model;
-    shader.uniforms.color = [1,0,0];
-    // shader.uniforms.color = sphere.color;
-
-
-    // draw the mesh
-    geom.bind(shader);
-    geom.draw(gl.POINTS);
-    geom.unbind();
-  }
-};
+}

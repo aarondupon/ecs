@@ -1,5 +1,5 @@
 
-export default function POINTERS_TO_ELEMENTS() {
+export default function POINTERS_TO_ELEMENTS(name) {
   let t = new Map()
   let p = []
   return ({
@@ -15,7 +15,7 @@ export default function POINTERS_TO_ELEMENTS() {
       return this.pointers.length;
     },
     add(pointer) {
-      
+      console.log('this.pointers',name,this.pointers)
       return this.pointers.push(pointer);
     },
     get(index) {

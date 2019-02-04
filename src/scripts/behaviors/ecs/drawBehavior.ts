@@ -33,7 +33,7 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     model,
   } = element;
   const position = [0, 0, 0];
-
+// debugger
   if (!DRAW_LIBRARY.get(uid)) {
      // enable derivatives for face normals
     const ext = gl.getExtension('OES_standard_derivatives');
@@ -44,11 +44,13 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
 
     // create a geometry with some vertex attributes
     const geom = glGeometry(gl)
-    .attr('position', complex.positions)
-    .attr('normal', complex.normals)
-    .attr('uv', complex.uvs, { size: 2 })
-    .faces(complex.cells);
+    complex.positions && geom.attr('position', complex.positions)
+    complex.normals && geom.attr('normal', complex.normals)
+    complex.uvs && geom.attr('uv', complex.uvs, { size: 2 })
+    complex.cells && geom.faces(complex.cells);
     DRAW_LIBRARY.set(uid, { geom, shaders });
+
+    console.log('createShader',uid)
 
   }
   const { shaders, geom } = DRAW_LIBRARY.get(uid);
@@ -87,5 +89,8 @@ const drawBehavior = (specs:any = {}) => (metods:any) => {
   };
   return comp;
 };
+
+
+export const rule = element => ((typeof element.draw === 'string' || element.draw instanceof String) && element.shaders)
 
 export default drawBehavior;

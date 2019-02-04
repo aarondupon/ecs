@@ -8,6 +8,7 @@
     "ecmaVersion": 6,
     "sourceType": "module"
   },
+  
   "rules": {
     "semi": 2,
     "no-tabs":"off",
@@ -21,6 +22,12 @@
     "comma-dangle":"off",
     "indent":"off",
     "no-var":"off",
-    "no-plusplus":"off"
+    "no-plusplus":"off",
+    "import/no-unresolved":[2, 
+      { 
+        "ignore": ["./system","./scene"]
+      }]
+
   }
 }
+

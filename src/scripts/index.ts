@@ -23,6 +23,9 @@ const is5 = /^5\./.test(package2.version);
 console.log(package2.version);
 console.log(is5);
 
+
+
+
 // load our texture maps
 const names = ['diffuse', 'normal', 'specular'];
 const urls = names.map((x) => {
