@@ -66,6 +66,7 @@
     "as-number": "^1.0.0",
     "async-each": "^1.0.1",
     "canvas-loop": "^1.0.7",
+    "css-mat4": "^1.0.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^6.1.2",

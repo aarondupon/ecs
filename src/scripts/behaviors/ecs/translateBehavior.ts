@@ -1,45 +1,55 @@
 import { vec3, mat4 } from 'gl-matrix';
+import { BehaviorSubject } from 'rxjs';
 
 const LIBRARY = new Map<number, any>();
 declare interface Itranslate{
   position:vec3;
 }
+
+/**
+ *
+ *
+ * @param {*} gl
+ * @param {*} [element={}]
+ * @param {*} camera
+ * @param {number} uid
+ */
 export const update = (gl, element:any = {}, camera:any, uid:number) => {
 
   if (!LIBRARY.get(uid)) {
     const position = element.position || vec3.create();
-    element.model = element.model || mat4.create();
+    element.model = element.model || mat4.identity( mat4.create());
+
     // element.position = vec3.create()
-    LIBRARY.set(uid, position);
+    const data = {
+      globalPositon:vec3.create(),
+    }
+    LIBRARY.set(uid, data );
+
   }
-//   const position = LIBRARY.get(uid);
-  const model = element.model;
+  
+  const { globalPositon } = LIBRARY.get(uid);
+  const parent = element.parent ? LIBRARY.get(element.parent.uid) : undefined
+  const parentGlobalPosition = parent ? parent.globalPositon : [0, 0, 0];
+  const localPosition = element.position || vec3.create();
+
+  let model = mat4.clone(element.model);
+  //if(!element.scale && !element.rotation) 
   mat4.identity(model);
-  mat4.translate(model, model, element.position);
+//   console.log('model', model);
+  vec3.add(globalPositon, parentGlobalPosition, localPosition);
+  mat4.translate(model, model, globalPositon);
 
-  //update model
+
+//   mat4.rotate( model, model, toDeg(90), [1,0,0] );
+//   mat4.rotate( model, model, toDeg(localRotation[1]), [0,1,0] );
+//   mat4.rotate( model, model, (element.rotation/1 || 1)*  180/Math.PI, [0,0,1] );
+
+  element.model = model;
+  // update model
   element.shaders && element.shaders.forEach(shader => {
-    shader.uniforms.model = model;
+    // shader.uniforms.model = model;
   });
-  console.log('translate',element.position)
-//   LIBRARY.set(uid,position);
- 
-
+//   console.log('translate',element.position)
+  LIBRARY.set(uid, { globalPositon });
 };
-
-/**
- * composable behavior for craeteElement pipeline
- * @param specs optioal specifications on initialize behavior
- */
-const translateBehavior = (specs:any = {}) => (metods:any) => {
-  const comp =  {
-    position:vec3.create(),
-    ...metods,
-    translate: 'translateBehavior',
-  };
-  return comp;
-};
-
-export const rule = (element)=>(typeof element.translate === 'string' || element.translate instanceof String) 
-
-export default translateBehavior;

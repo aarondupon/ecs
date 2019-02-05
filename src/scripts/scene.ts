@@ -4,8 +4,7 @@ import createSdfcontentText from './create-sdfcontent-text';
 import * as createTexture from 'gl-texture2d';
 import {default as hex } from 'hex2rgb';
 import { drawChildren, translate, composition } from './behaviors';
-import {drawBehavior, translateBehavior, composotionBehavior} from './behaviors';
-
+import addbehaviors from './compose/operators/addBehavior';
 import createElement from './compose/createElement';
 import createESCElement from './compose/createESCElement';
 import registerElement from './compose/registerElement';
@@ -34,26 +33,28 @@ const light = {
   color: hex2rgb('#fffa9e'),
   ambient: hex2rgb('#373c3d'),
 };
+
+function connect(elemnt,elemnt2,[output,input]){
+  elemnt2[input] = elemnt[output];
+}
 export default function scene(gl, images) {
   // the 3D objects for our scene
 
   const thorus = createESCElement(
-    composotionBehavior(),
-    drawBehavior(),
-    translateBehavior(),
+    // composotionBehavior(),
+    addbehaviors('composition','draw'),
   )(createTorus())
 
   const dot = createESCElement(
-    composotionBehavior(),
-    drawBehavior(),
-    translateBehavior(),
+    addbehaviors('draw','composition'),
+    // addbehaviors('draw','translate','rotate','scale'),
   )(createSphere())
 
-  dot.parent = thorus
+  // dot.parent = thorus
   dot.position = [0,0,0]
   dot.color = hex2rgb('#CC00CC');
   
-
+  dot.scale = [1,1,1]
   registerElement(dot);
   registerElement(thorus);
 
@@ -68,7 +69,14 @@ export default function scene(gl, images) {
   
   raf(60).subscribe(
     (time)=>{
-      dot.position = [0,Math.sin(time/10)/3,2*Math.sin(time/10)]
+      dot.scale = [.4,.2,.1]
+      // connect(thorus,dot,['position','position'])
+      thorus.rotation = [0,0,.1*Math.sin(time/100)]
+      dot.rotation = [0,0,.1*Math.sin(time/100)]
+      dot.position = [0,.4,0]
+      // thorus.scale = [1,.5,1]
+
+      // dot.position = [0,Math.sin(time/10)/10,-1+.5*Math.sin(time/100)]
       // dot2.position = [0,Math.sin(time/10)/3,2*Math.sin(time/10)]
     }
   )
@@ -121,9 +129,9 @@ export default function scene(gl, images) {
    
 
     // move our light around
-    light.position[0] = -Math.sin(time / 2) * 0.9;
-    light.position[1] = -.5+(Math.sin(time / 2) *2);//* 0.3;
-    light.position[2] = 0.5 + Math.sin(time / 2) ;
+    // light.position[0] = -Math.sin(time / 2) * 0.9;
+    // light.position[1] = -.5+(Math.sin(time / 2) *2);//* 0.3;
+    // light.position[2] = 0.5 + Math.sin(time / 2) ;
 
     // bind our textures to the correct slots
     diffuse.bind(0);
@@ -131,7 +139,7 @@ export default function scene(gl, images) {
     specular.bind(2);
 
 
-    thorus.position = light.position;
+    // thorus.position = light.position;
     // // draw our phong mesh
     // mesh.draw(camera);
 

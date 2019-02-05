@@ -1,5 +1,5 @@
-export function configure(ref,module,c){
-    console.log('ref,module,c',ref,module,c)
-    
+const config = {
+    first:['_system_','translate','rotate','scale'],
+    last:['draw']
 }
-
+export default config

@@ -28,13 +28,10 @@ const DRAW_LIBRARY = new Map<number, any>();
  * @param uid 
  */
 export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => {
-  const {
-    complex,
-    model,
-  } = element;
-  const position = [0, 0, 0];
-// debugger
+
+
   if (!DRAW_LIBRARY.get(uid)) {
+    const {complex} = element
      // enable derivatives for face normals
     const ext = gl.getExtension('OES_standard_derivatives');
     if (!ext) { throw new Error('derivatives not supported'); }
@@ -48,11 +45,20 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     complex.normals && geom.attr('normal', complex.normals)
     complex.uvs && geom.attr('uv', complex.uvs, { size: 2 })
     complex.cells && geom.faces(complex.cells);
+
+    element.model = element.model || mat4.create();
+
+    shaders.forEach((shader:IShader, shaderIdx:number) => {
+      shader.bind();
+      geom.bind(shader);
+      geom.draw(gl.TRIANGLES);
+      // geom.unbind();
+    })
     DRAW_LIBRARY.set(uid, { geom, shaders });
 
   }
   const { shaders, geom } = DRAW_LIBRARY.get(uid);
-
+  
   shaders.forEach((shader:IShader, shaderIdx:number) => {
 
     const uniforms =  element.shaders[shaderIdx].uniforms;
@@ -64,31 +70,15 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     shader.bind();
 
     Object.assign(shader.uniforms, uniforms);
-    shader.uniforms.model = model;
+    shader.uniforms.model = element.model;
     shader.uniforms.projection = camera.projection;
     shader.uniforms.view = camera.view;
     shader.uniforms.color = [1, 0, 0];
-          // draw the mesh
+
+    // draw the mesh
     geom.bind(shader);
     geom.draw(gl.TRIANGLES);
     geom.unbind();
   });
 
 };
-
-/**
- * composable behavior for craeteElement pipeline
- * @param specs optioal specifications on initialize behavior
- */
-const drawBehavior = (specs:any = {}) => (metods:any) => {
-  const comp =  {
-    ...metods,
-    draw: 'drawBehavior',
-  };
-  return comp;
-};
-
-
-export const rule = element => ((typeof element.draw === 'string' || element.draw instanceof String) && element.shaders)
-
-export default drawBehavior;
