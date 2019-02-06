@@ -36,6 +36,9 @@ each(urls, loadImage, (err, images) => {
   if (err) {
     console.error(err);
   }
-  const app = renderer(images);
-  document.body.appendChild(app.canvas);
+  setTimeout(()=>{
+    const app = renderer(images);
+    document.body.appendChild(app.canvas);
+  })
+
 });

@@ -101,13 +101,14 @@ TextLayout.prototype.update = function(opt) {
   this._capHeight = getCapHeight(font)
   this._lineHeight = lineHeight
   this._ascender = lineHeight - descender - this._xHeight
-  
+
   //layout each glyph
   var self = this
   var charIdx = 0
   var charIdx2 = 0
   var lastY = 0;
   // var hypensCountDirtyFIX =  0
+  
   lines.forEach(function(line, lineIndex) {
    // if  hypens enabled text max lenght is not correct
     var start = line.start

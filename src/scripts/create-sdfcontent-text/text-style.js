@@ -1,40 +1,37 @@
 
-const getValue = (value) =>{
-   return  typeof value === 'number' 
-   ? {group:`${value}px`,value,unit:'px'} 
+const getValue = (value) => (typeof value === 'number'
+   ? { group: `${value}px`, value, unit: 'px' }
    : [(/([+-]?\d*\.?\d+)\s?(px|em|ex|%|in|cn|mm|pt|pc+)/gim).exec(value)]
-     .map(x=>( x ? {group:x[0],value:x[1],unit:x[2]} : { } ))[0]
+     .map(x => (x ? { group: x[0], value: x[1], unit: x[2] } : { }))[0]);
 
-}
-
-const getCaclulatedValue = (style,documentStyle,key) =>{
-    let {group,value,unit} = getValue(style[key]);
-    if(documentStyle[key]  && (unit === 'em' || unit === '%')) {
-        let baseValue    = documentStyle[key];
-        if(key === 'lineHeight' && style[key]){
-            baseValue = getCaclulatedValue(style,documentStyle,'fontSize');
+const getCaclulatedValue = (style, documentStyle, key) => {
+    
+    const { group, value, unit } = getValue(style[key]);
+    if (documentStyle[key] && (unit === 'em' || unit === '%')) {
+        let baseValue = documentStyle[key];
+        if (key === 'lineHeight' && style[key]) {
+            
+            baseValue = getCaclulatedValue(style, documentStyle, 'fontSize');
             style[key] = baseValue * parseFloat(value);
-        }else{
+        } else {
             style[key] = parseFloat(baseValue) * parseFloat(value);
         }
-    }else if (unit === 'px') {
-        style[key] =  parseFloat(value);
+    } else if (unit === 'px') {
+        style[key] = parseFloat(value);
     }
-    return style[key]
-}
+    return style[key];
+};
 export default class TextStyle {
-
-    constructor(style,documentStyle) {
+    constructor(style, documentStyle) {
         this.styleID = 0;
 
         
-
-        Object.keys(style).forEach(key=>{
-            if(style[key]){
-                var value = getCaclulatedValue(style,documentStyle,key)
+        Object.keys(style).forEach(key => {
+            if (style[key]) {
+                var value = getCaclulatedValue(style, documentStyle, key);
             }
-        })
-        Object.assign(this,style);
+        });
+        Object.assign(this, style);
     }
 
     get align() {

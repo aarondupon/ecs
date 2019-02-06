@@ -139,7 +139,7 @@ export function sizes(opt, stylesMap) {
 export function colors(opt, styles) {
   let { text } = opt;// .replace(/\u00AD/g,'-');
   text = text.replace(/<[^>]*>/g, '');
-  let colors = new Float32Array(text.length * 12);
+  let colors = new Float32Array(text.length * 3 * 4);
   let i = 0;
   for (let n = 0; n < text.length; n += 1) {
     const charStyle = styles.styleAtIdx(n);
@@ -147,7 +147,7 @@ export function colors(opt, styles) {
     const char = text.charAt(n);
     if (!/\u00AD/g.test(char)) {
       const [R, G, B] = fill;
-
+      
       // TL
       if (charStyle.name === 'a') console.log('fillfill', fill, charStyle.name, charStyle);
 

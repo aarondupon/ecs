@@ -5,12 +5,14 @@ import { elementAt, share } from 'rxjs/operators';
 import glShader from 'gl-shader';
 import glGeometry from 'gl-geometry';
 
+
 declare interface IDrawObject{
   geo?:any;
   gl?:any;
   model?:any;
   shaders?:any;
   complex?:any;
+  drawMode?:any;
 }
 
 declare interface IShader{
@@ -19,6 +21,10 @@ declare interface IShader{
 }
 
 const DRAW_LIBRARY = new Map<number, any>();
+
+// export const rule = (element)=>{
+//      return element.shaders && element.behaviors.includes('draw') 
+// }   
 
 /**
  * updat function draws data to screen
@@ -41,19 +47,26 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
 
     // create a geometry with some vertex attributes
     const geom = glGeometry(gl)
+    
     complex.positions && geom.attr('position', complex.positions)
     complex.normals && geom.attr('normal', complex.normals)
     complex.uvs && geom.attr('uv', complex.uvs, { size: 2 })
     complex.cells && geom.faces(complex.cells);
+    Object.keys(complex).forEach(key=>{
+      geom.attr(key, complex[key]) 
+    })
+    console.log(`geom of ${uid}: `,geom)
+    
+    
 
     element.model = element.model || mat4.create();
 
-    shaders.forEach((shader:IShader, shaderIdx:number) => {
-      shader.bind();
-      geom.bind(shader);
-      geom.draw(gl.TRIANGLES);
-      // geom.unbind();
-    })
+    // shaders.forEach((shader:IShader, shaderIdx:number) => {
+    //   shader.bind();
+    //   geom.bind(shader);
+    //   geom.draw( element.drawMode || gl.TRIANGLES);
+    //   // geom.unbind();
+    // })
     DRAW_LIBRARY.set(uid, { geom, shaders });
 
   }
@@ -75,9 +88,10 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     shader.uniforms.view = camera.view;
     shader.uniforms.color = [1, 0, 0];
 
+    //console.log('element.drawMode',element.drawMode)
     // draw the mesh
     geom.bind(shader);
-    geom.draw(gl.TRIANGLES);
+    geom.draw( element.drawMode || gl.TRIANGLES,3*10);
     geom.unbind();
   });
 

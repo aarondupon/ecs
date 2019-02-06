@@ -11,6 +11,7 @@ import registerElement from './compose/registerElement';
 import {timer} from 'rxjs';
 import { animationFrame } from 'rxjs/scheduler/animationFrame';
 import {scan} from 'rxjs/operators'
+import addBehavior from './compose/operators/addBehavior';
 
 
 function raf(step = 1000) {
@@ -46,7 +47,7 @@ export default function scene(gl, images) {
   )(createTorus())
 
   const dot = createESCElement(
-    addbehaviors('draw','composition'),
+    addbehaviors('composition'),
     // addbehaviors('draw','translate','rotate','scale'),
   )(createSphere())
 
@@ -64,8 +65,8 @@ export default function scene(gl, images) {
   // dot2.parent = thorus
   
 
-  registerElement(dot);
-  registerElement(thorus);
+  // registerElement(dot);
+  // registerElement(thorus);
   
   raf(60).subscribe(
     (time)=>{
@@ -84,17 +85,20 @@ export default function scene(gl, images) {
 
   const sphere = createSphere(gl);
   
-  const text  = createSdfcontentText(gl, { width:100, style:{} });
+  const text  = createSdfcontentText(gl, { width:150, style:{} });
 
   const nullObj = createElement(
-        composition(),
-        drawChildren(),
+        addBehavior('composition'),
+        // drawChildren(),
       )({})
 
   // nullObj.add(thorus);
-  nullObj.add(sphere);
-  nullObj.add(text);
-  registerElement(nullObj);
+  // nullObj.add(sphere);
+  // nullObj.add(text);
+  thorus.parent = nullObj;
+  // text.parent = nullObj
+  
+  // registerElement(nullObj);
   // set light position to [0,0,0]
   // craete element from composition,drawChildren & add sphere;
   // createElement(composition(), drawChildren() )({}).add(sphere)
@@ -148,6 +152,7 @@ export default function scene(gl, images) {
     sphere.position = light.position;
     sphere.color = light.color;
     sphere.light = light;
+
 
     // thorus.light = light;
 

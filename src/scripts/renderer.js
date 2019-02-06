@@ -3,60 +3,33 @@ import loop from 'canvas-loop';
 import createCamera from 'perspective-camera';
 import createScene from './scene';
 import {ECSSystems}  from './system/register';
-// import {ECSSystems}  from './system/autoload';
-// import DrawSystem from './system/DrawSystem';
-// import ECSDrawSystem from './system/ECSDrawSystem';
-// import ECSTranslateSystem from './system/ECSTranslateSystem';
-// import ECSCompositionSystem from './system/ECSCompositionSystem';
 
-// const ECSSystems = []
+import {timer} from 'rxjs';
+import { animationFrame } from 'rxjs/scheduler/animationFrame';
+import {scan} from 'rxjs/operators'
 
-// import('./system/config').then(({configure})=>{
-//   // automatically import all files ending in *.stories.js
-//   const importSystems = require.context('./system', true, /System.ts$/)
 
-//   function loadSystems() {
-//     // require('../stories/index.stories');
-//     importSystems.keys().forEach((filename,i) => {
-
-//       const m = importSystems(`${filename}`);
-
-//       ECSSystems.push(m.default);    
-//       console.log('filename',filename)
-//     });
-//   }
-//   loadSystems()
-//   })
-
-// const modules = []
-// async function f(){
-// const importSystems = require.context('./system', true, /System.ts$/, 'lazy');
-
-// importSystems.keys(); // sync, return an array of gathered paths
-// importSystems.keys().forEach((filename,i) => {
-//   const m = importSystems(`${filename}`);
-//   modules.push(m)
-// })
-// /* es-lint error: off */
-// await  modules// async, resolves to the module
-
-// }
-
-// const func = modules.map(m=>m)
-// console.log('func:',func)
+function raf(step = 1000) {
+  return timer(0, 1000 / step, animationFrame).pipe(
+      scan((total, value, index) => total + 1, 0));
+}
   
 export default function renderer(images) {
   const gl = context();
   const { canvas } = gl;
   const app = loop(canvas, {
     scale: window.devicePixelRatio
-  }).on('tick', render);
+  })//.on('tick', render);
+
+  raf(60).subscribe((dt)=>{
+    render(dt)
+  })
 
   // create a simple perspective camera
   // contains our projection & view matrices
   const camera = createCamera({
     fov: Math.PI / 4,
-    near: 0.01,
+    near: 0.1,
     far: 100
   });
 
@@ -79,6 +52,7 @@ export default function renderer(images) {
   app.canvas = canvas;
   app.gl = gl;
 
+  window.app = app;
 
   return app;
 
@@ -90,13 +64,15 @@ export default function renderer(images) {
     time += dt / 1000;
 
     camera.viewport = [0, 0, width, height];
-    camera.update();
+    // camera.update();
 
     // set WebGL viewport to device size
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
-    gl.clearColor(0.04, 0.04, 0.04, 1);
+    // gl.clearColor(0.04, 0.04, 0.04, .1);
+    // gl.clearColor(0.9, 0.9, 0.9, .1);
+    gl.clearColor(0.1, 0.1, 0.1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // eslint-disable-line no-bitwise
 
     // enable ECSSystems

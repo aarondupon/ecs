@@ -40,6 +40,7 @@ declare function create(camera:any,props:any):SDFTextContent;
 declare interface SDFTextContent{
     draw(opts: SDFTextContent.SDFTextContentMethodOptions): number;
     position:Array
+    parent:any,
 }
 
 /*~ If you want to expose types from your module as well, you can

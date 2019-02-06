@@ -1,6 +1,8 @@
 
 import TextStyle from './text-style';
 import isnumber from 'lodash.isnumber';
+var lineHeight = require('line-height');
+
 
 // utils
 const parseColor = (color)=>{
@@ -54,8 +56,15 @@ const getValue = (value) => (typeof value === 'number'
 const camelCased = (myString) => myString.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
 
 
-function computeDocumementStyle() {
+function getComputeDocumementStyle() {
+    
     const cs = window.getComputedStyle(document.body, null);
+    const defaults = {
+        lineHeight:parseFloat(lineHeight(document.body)) || 18,
+        letterSpacing:1,
+        fontWeight:300,
+    }
+   
     return [
         'font-size',
         'font-weight',
@@ -63,11 +72,16 @@ function computeDocumementStyle() {
         'letter-spacing'
     ].reduce((style, property) => {
         const result = getValue(cs.getPropertyValue(property));
-        if (result) {
-        style[camelCased(property)] = result.value;
+        if (result && result.value) {
+            style[camelCased(property)] = result.value;
         }
         return style;
-    }, {});
+    }, defaults);
+
+    
+    
+
+    
 }
 
 
@@ -105,6 +119,7 @@ function parseHtmlStyle(newStyle){
 
     const htmlStyle = {...defaultStyle,...newStyle}
     const pixiTextStyle = Object.keys(htmlStyle).reduce((style,key)=>{
+        
         switch (key) {
         case 'fill': 
             style.fill = parseColor(htmlStyle[key]).rgba;
@@ -123,6 +138,7 @@ function parseHtmlStyle(newStyle){
     return pixiTextStyle;
 }
 function getStyle(styles = {},style = {} ){
+    
     const defaultStyle = parseHtmlStyle({...styles.default, ...style})
     Object.keys(styles).forEach(key=>{
     styles[key] = parseHtmlStyle(styles[key])
@@ -131,10 +147,20 @@ function getStyle(styles = {},style = {} ){
 }
 
 export default function createStyle(styles,style) {
-    const parsedStyle = getStyle(newStyle,style)
+    const parsedStyle = getStyle(styles,style)
     let newStyle = {}
+
+    var computeDocumementStyle = getComputeDocumementStyle()
+    
     Object.keys(parsedStyle).forEach(key=>{
-        newStyle[key] =  new TextStyle(parsedStyle[key], computeDocumementStyle());
+       
+        newStyle[key] =  new TextStyle(parsedStyle[key], computeDocumementStyle);
+        const v = newStyle[key]
+        if((String(v.lineHeight).indexOf('em') > -1)) {
+            console.error(`lineHeight: IS NOT A NUMBER: createStyle()
+                stylesIndexs.styles[0].style =`,v.lineHeight)
+        }
+        console.log('key',newStyle[key] )
     })
     return newStyle;
 }

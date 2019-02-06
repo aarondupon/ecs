@@ -81,7 +81,8 @@ function loadBehaviors() {
       const rule =  (element) => (element.behaviors && element.behaviors.includes(getBehaviorName(filename)));
       const behavior = {
         update:behaviorModule.update,
-        rule,
+        rule: behaviorModule.rule || rule,
+        mName: behaviorModule.name,
       };
 
       ECSBehaviors.push(behavior);
@@ -106,7 +107,7 @@ function loadBehaviors() {
           const element = queue.shift();
           let behaviorExist = false;
           ECSBehaviors.forEach((behavior, index) => {
-            console.log(behavior.default.name, behavior.rule, ECSSystems[index].name, index, element);
+            // console.log(behavior.default.name, behavior.rule, ECSSystems[index].name, index, element);
             if (behavior.rule && behavior.rule(element)) {
               ECSSystems[index].add(pointer);
               behaviorExist = true;
@@ -146,10 +147,11 @@ const register = (element) => {
 
     // USE MAP NO FOREACH
     ECSBehaviors.forEach((behavior, index) => {
-      if (behavior.rule && behavior.rule(element)) {
-        ECSSystems[index].add(pointer);
-        behaviorExist = false;
-      }
+        // console.log(behavior.default.name, behavior.rule, ECSSystems[index].name, index, element);
+        if (behavior.rule && behavior.rule(element)) {
+          ECSSystems[index].add(pointer);
+          behaviorExist = true;
+        }
     });
     if (!behaviorExist &&  element.behaviors) {
       console.error(`register.js:`,element,`behavior ${element.behaviors}  does not exist
