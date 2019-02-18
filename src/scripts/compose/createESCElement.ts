@@ -11,7 +11,7 @@ declare interface IElement{
   parent?:any;
 }
 
-const createElement = (...behaviors) => (props = {}) => {
+const createElement = (...behaviors:{ (props:any): IElement; }[]) => (props = {}) => {
   // const element:IElement = compose(...behaviors,_system_Behavior({}))(props);
   const element:IElement = compose(...behaviors)(props);
   const comp = Object.assign({uid:Date.now()}, element);

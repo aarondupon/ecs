@@ -1,15 +1,9 @@
 
-import { connect } from './utils';
 import { default as createState } from './state';
 import FpsController from './FpsController';
 import { info } from './message';
 import { merge, Observable, Subscription, ReplaySubject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-import { task } from '../../behaviors/ecs/geomBehavior';
-
-declare interface BehaviorName  extends String{
-
-}
 
 interface ObservableMap<K, V> {
   clear(): void;
@@ -79,7 +73,6 @@ export function createTable(name:string):ObservableMap<string, any> {
   SYSTEM_TABLES.set(name, observableMap);
   return observableMap;
 }
-
 
 declare interface IGroup{
   data:Object;

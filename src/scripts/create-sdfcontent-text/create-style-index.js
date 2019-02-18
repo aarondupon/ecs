@@ -16,10 +16,11 @@ class Style{
 }
 function getStyleBytagName(tagName,isClosingTag,styles){
     const style = omitBy(styles[tagName],isundefined)
+    const defaultStyle = styles.default;
     if(isClosingTag){
-        return {style:{...styles.default}, name:'default',isClosingTag};
+        return {style:defaultStyle, name:'default',isClosingTag};
     }
-    return {style:{...styles.default,...style},name:tagName,isClosingTag}
+    return {style: {...defaultStyle, ...style},name:tagName,isClosingTag}
 }
 
 export default function createStyleIndex(opt){
@@ -47,7 +48,5 @@ export default function createStyleIndex(opt){
         }
         styles.push(styleInfo);
     }
-    return new Style(styles);
-    
-    
+    return new Style(styles);  
 }
