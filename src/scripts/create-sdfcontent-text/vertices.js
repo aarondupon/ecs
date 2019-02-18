@@ -112,7 +112,7 @@ export function positions(glyphs, sizes, infoFontSize) {
 export function sizes(opt, stylesMap) {
   let { text } = opt;
   text = text.replace(/<[^>]*>/g, '');
-  var sizes = new Float32Array(text.length * 4 * 2);
+  var sizes = new Float32Array(text.length * 4 * 1);
   let i = 0;
   for (let n = 0; n < text.length; n += 1) {
     const charStyle = stylesMap.styleAtIdx(n);
@@ -149,7 +149,7 @@ export function colors(opt, styles) {
       const [R, G, B] = fill;
       
       // TL
-      if (charStyle.name === 'a') console.log('fillfill', fill, charStyle.name, charStyle);
+      // if (charStyle.name === 'a') console.log('fillfill', fill, charStyle.name, charStyle);
 
 
       colors[i++] = R;

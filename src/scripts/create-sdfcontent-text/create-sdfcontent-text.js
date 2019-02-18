@@ -21,9 +21,9 @@ import addBehavior from '../compose/operators/addBehavior';
 import createESCElement from '../compose/createESCElement';
 import registerElement from '../compose/registerElement';
 import { buffer } from 'rxjs-compat/operator/buffer';
+import {fontLoaderBehavior,test2Behavior,geomBehavior,translate3dBehavior,rotate3dBehavior,scale3dBehavior}  from '../behaviors';
 const stringify = require("json-stringify-pretty-compact");
-
-var createTexture = require("gl-texture2d")
+var createTexture = require("gl-texture2d");
 // var baboon        = require("baboon-image")
 
 // ECS -> MVC
@@ -163,7 +163,6 @@ const createSquare = (rect= [1.,1.]) => {
                 projection: new Float32Array(16),
                 view: new Float32Array(16),
                 model, // our model-space transformations
-                color: [.5, 1, .5],
                 
             },
            
@@ -174,76 +173,85 @@ const createSquare = (rect= [1.,1.]) => {
     // geo.attr('scale', scale);
 
     const comp = createESCElement(
-        addBehavior('draw','composition')
+        addBehavior('draw','composition'),
         )(sphere);
     
     return comp
 };
 
 
-const createTextObject =(buffers,sdfImage) => {
-    // const shader = createShader(gl, vert, frag);
-    // const geom = createGeometry(window.app.gl,mesh);
-    // Object.keys(mesh).forEach(key=>{
-    //     geom.attr(key, mesh[key])
-    // })
-    // debugger
-
+const createTextObject =(buffers,width) => {
+  
     const model = mat4.create();
-    // geo.attr('positions', mesh.positions);
-    // geo.attr('cells', mesh.cells);
-    const position = [0, 0, 0];
+    const position = [100,100, 0];
     const scale = [1, 1];
     
-
-   
-    
-    
     const baseObj = {
-        complex:{
-            positions: buffers.position.buffer,
-            colors: buffers.aVertexColor.buffer,
-            sizes: buffers.aVerTexSize.buffer,
-        },
-
-        buffers:{...buffers,color:buffers.aVertexColor},
-        position: [0, 0, 0],
-        color: [1, 0, 1],
-        scale: [1,1,1],
         uid:'text-component',
-        drawMode: ['POINTS'],
-        pointSize: 5,
-        shaders: [
-            {
-            vert,
-            frag,
-            
-            uniforms: {
-                projection: new Float32Array(16),
-                view: new Float32Array(16),
-                model, // our model-space transformations
-                color: [1, 1, 0],
-                
-                // uSampler:'texture',// = renderer.bindTexture(texture);
-                u_alpha:1,
-                u_color:0xff00ff,
-                u_fontSize:1,//sdfText.style.fontSize;
-                u_fontInfoSize:42,//font.info.size)// * PIXI.RESOLUTION;
-                // u_weight:sdfText.style.weight;
-                // translationMatrix = sdfText.worldTransform.toArray(true);
-                }
-            }]
-        };
+        projection: new Float32Array(16),
+        view: new Float32Array(16),
+        model, // our model-space transformations  
+    }
+    
+    /*
+    <ESCElement>
+        <fontLoader/>
+        <geomBehavior />
+        <translate3dBehavior rotation={[100,100,0]} />
+        <rotate3dBehavior position={[1,1,0]} />
+        <scale3dBehavior rotation={[1,1,1]} />
+        <test2Behavior />
+    </ESCElement>
+    */
 
+    /*
+    <Identety autoRender={true} >
+        <fontLoaderComponent/>
+        <geomComponent />
+        <translate3dComponent rotation={[100,100,0]} />
+        <rotate3dComponent position={[1,1,0]} />
+        <scale3dComponent rotation={[1,1,1]} />
+        <test2Component />
+    </Identety>
+    */
+    
     const comp =  createESCElement(
-        addBehavior('composition','draw2d'),
+        fontLoaderBehavior({
+            font: '/public/fonts/din/DIN-Regular.fnt',
+            image: '/public/fonts/din/DIN-Regular.png',
+            }),
+        geomBehavior({
+            buffers,
+            shaders:[
+                {
+                vert,
+                frag,
+                uniforms: {
+                    uSampler:'texture',// = renderer.bindTexture(texture);
+                    uAlpha:1,
+                    uColor:0xff00ff,
+                    uFontSize:1,//sdfText.style.fontSize;
+                    uFontInfoSize:42,//font.info.size)// * PIXI.RESOLUTION;
+                    // u_weight:sdfText.style.weight;
+                    }
+                }]}),
+        translate3dBehavior({
+            position:[100,100,0],
+        }),
+        rotate3dBehavior({
+            rotation:[0,0,0],
+        }),
+        scale3dBehavior({
+            scale:[1,1,1]
+        }),
+        test2Behavior({ // drawing
+        }),
+        // addBehavior('composition'),//,'test'),
     )(
         baseObj  
     );
 
-    
-    
-    return comp;//registerElement(comp);
+    return comp;
     
   };
 
@@ -286,6 +294,8 @@ const createTextObject =(buffers,sdfImage) => {
         const texHeight = font.common.scaleH;
         const glyphs = layout.glyphs;
 
+
+       
         const sizes = vertices.sizes(opt, stylesIndexs);
 
         // get common vertex data
@@ -296,6 +306,7 @@ const createTextObject =(buffers,sdfImage) => {
 
         const colors = vertices.colors(opt, stylesIndexs);
 
+        
         var a  = []
         const b = [...positions];
         let i = 0;
@@ -304,7 +315,8 @@ const createTextObject =(buffers,sdfImage) => {
                 i += 2;
         }
 
-        const positionsXYZ = a.map(x=>x/(window.innerWidth*100)*8)//a
+        // const positionsXYZ = a.map(x=>x/(window.innerWidth*100)*8)//a
+        const positionsXYZ = b.map(x=>x/(window.innerWidth*100)*8)//a
         
         /*
         .addIndex(glData.indexBuffer)
@@ -324,6 +336,8 @@ const createTextObject =(buffers,sdfImage) => {
             type: 'uint16',
             count: glyphs.length
         });
+     
+        
        
         const styleID = style.styleID;
         
@@ -337,13 +351,13 @@ const createTextObject =(buffers,sdfImage) => {
 
         //vertexArrayObject with buffers
        const buffers = {
-            "aVerTexSize":{buffer:sizes,type:'FLOAT',size:2,stride:2*6,offset:0},
-            "aVertexColor":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
-            "aVertexPosition":{buffer:positions,type:'FLOAT',size:2,stride:2*4,offset:0},
-            "aTextureCoord":{buffer:uvs,type:'FLOAT',size:2,stride:2*4,offset:0},
+            "index":{buffer:indices},
+            // "position2D":{buffer:positions,type:'FLOAT',size:2,stride:2*4,offset:0},
             // update! keep it simple
-            "position":{buffer:positionsXYZ,type:'FLOAT',size:3,stride:3*4,offset:0},
-            "colors":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
+            "size":{buffer:sizes,type:'FLOAT',size:1,stride:1*4,offset:0},
+            "coord":{buffer:uvs,type:'FLOAT',size:2,stride:2*4,offset:0},
+            "position":{buffer:positionsXYZ,type:'FLOAT',size:2,stride:2*4,offset:0},
+            "color":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
         } 
         return buffers
     };
@@ -351,10 +365,10 @@ const createTextObject =(buffers,sdfImage) => {
 const SDFTextContent = (gl, props = { width: 200 }) => {
     let dirty = 0;
     let indexDirty = 0;
-   
+
 
     const create = gl => {
-        const styles = createStyle(myStyles, { width: 200, breakWords: true });
+        const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
       
         const nullObj = {
             position: [0, 0, 0],
@@ -362,38 +376,24 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
 
         const node = createESCElement(addBehavior('translate'))(nullObj);
         
-        
-        registerElement(node)
+        // registerElement(node)
         const assets = loadAssets(styles, (font, image) => {
            
-            const txt =  'Hi I <a>am a computer</a>, taking over the world!';
+            const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
             const vao = createVertexArrayObject(styles,txt,font)     
 
-            const text = createTextObject(vao,image);
+            const text = createTextObject(vao,props.width);
 
-            console.log(stringify(text,{maxLength: 1, indent: 1}))
-             registerElement(text)
-                
+            // console.log(stringify(text,{maxLength: 1, indent: 1}))
+            const registration =  registerElement(text);
+            
+            // registration.unregister()
+            // setTimeout(()=>registration.unregister(),1000);
+
+     
             const square = createSquare();
             // console.log('text:square',stringify(square))
             // registerElement(square)
-
-//Create texture 
-// texture = createTextObjecture(gl)
- 
-// //Create shader 
-// shader = createShader(gl)
-// shader.attributes.position.location = 0
-
-
-
-            // dirty++;
-            // indexDirty++;
-
-            // if (node.add) {
-            //     // node.add(square);
-            //     // node.add(text);
-            // }
         });
         // compose return object
         return node;

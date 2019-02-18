@@ -100,5 +100,5 @@ function   update(gl, element, camera, uid){
     element.draw(camera);
 } 
 
-const system  = createSytstem(update,'drawSystem')
+const system  = createSytstem(update,'drawSystem',undefined)
 export default system;

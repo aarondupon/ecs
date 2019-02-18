@@ -1,15 +1,12 @@
-attribute vec2 aVertexPosition;
 attribute vec3 color;
-attribute vec2 aTextureCoord;
-attribute float aVertexSize;
-attribute vec4 aVertexColor;
+attribute vec2 coord;
+attribute float size;
 attribute vec4 position;
 
 
 
 
-varying vec2 vTextureCoord;
-
+varying vec2 vCoord;
 varying float vScale;
 varying vec4 vColor;
 varying float vSize;
@@ -26,19 +23,19 @@ uniform float u_fontInfoSize;
 
 void main(void)
 {
-    // float f =  aVertexSize;
-    // vTextureCoord = aTextureCoord;
+
+    vCoord = coord;
     // float scale = aVertexSize;//1.5;
     // vec2 pos = aVertexPosition;
-    // vScale = aVertexSize;
-    // vColor = aVertexColor;//vec4(aVertexColor.rgb,0.3);
-    // vSize = aVertexSize;
-    vec4 c = vec4(color.rgb,.5);
-    vColor =  vec4(0.8471, 0.3059, 0.4392, 1.0)*vec4(0) + c;
+    vScale = size;
+    vSize = size;
+    vColor = vec4(color.rgb,1.0);
     // gl_Position = vec4((projectionMatrix * translationMatrix * vec3(pos * (1./u_fontInfoSize), 1.0)).xy, 0.0, 1.0);
 
     // gl_Position = vec4((projectionMatrix * translationMatrix * vec3(pos * (64.0/u_fontInfoSize), 1.0)).xy, 0.0, 1.0);
-    gl_Position = position;//projection * view * model * position;
+    // gl_Position = position*vec4(1,-1,1,1);//projection * view * model * position;
+    gl_Position =   model * position;// * vec4(1,-1,1,1);
+    // gl_Position = projection * view * model * position;
     gl_PointSize = 5.0;
 
 }

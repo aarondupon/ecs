@@ -7,6 +7,8 @@ import glGeometry from 'gl-geometry';
 const glBuffer =  require('gl-buffer');
 const glVao = require('gl-vao');
 
+
+
 declare interface IDrawObject{
 
   gl?:any;
@@ -24,9 +26,6 @@ declare interface IShader{
 
 const DRAW_LIBRARY = new Map<number, any>();
 
-// export const rule = (element)=>{
-//      return element.shaders && element.behaviors.includes('draw')
-// }
 
 /**
  * updat function draws data to screen
@@ -50,7 +49,8 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
       const shader = glShader(gl, vert, frag);
       const {attributes} = shader;
       const _attributes = [];
-
+      
+      
       // per shader
       Object.keys(attributes).forEach((key, i) => {
         // set location (pointer) of attribute
@@ -70,13 +70,28 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
         }
       });
 
-      const vao = glVao(gl, _attributes);
+      // gl.drawElements(type, size || this.indexBuffer.data.length, gl.UNSIGNED_SHORT, (start || 0) * 2 );
+      // const _elements =  buffers.index ?  glBuffer(gl,buffers.index.buffer) : undefined
+      // debugger
+      // new Uint16Array([0, 1, 2, 0, 2, 3])
+      const _elements = glBuffer(gl, 
+        buffers.index.buffer,//new Uint16Array([0, 1, 2, 0, 2, 3]), 
+        gl.ELEMENT_ARRAY_BUFFER,
+        gl.STATIC_DRAW)
+        // debugger
+        
+        const vao = glVao(gl, _attributes);//,_elements);
       
       // const stride = 12 , size = 3;
-      const length = buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
-      
-      console.log('lengthlengthlength',length,3*42)
+      // const length = buffers.index 
+      //   ? buffers.index.buffer.lengt
+      //   : buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
 
+        const length = buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
+      console.log('lengthlengthlength',length,3*42,buffers.index.buffer.length)
+      if(length !== 552 ){
+        console.error(`vao.draw:error: ${length} !== 552,   ${buffers.index.buffer.length}`)
+      }
       return {
         length,
         shader,
@@ -90,14 +105,14 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
 
   }
 
- 
+  
 
   const { geoms } = DRAW_LIBRARY.get(uid);
 
   geoms.forEach((geom,index:number) =>{
       const {shader, vao, length} = geom;
       const uniforms =  element.shaders[index].uniforms;
-      // Object.assign(shader.uniforms, uniforms);
+      Object.assign(shader.uniforms, uniforms);
       // shader.uniforms.model = element.model;
       // shader.uniforms.projection = camera.projection;
       // shader.uniforms.view = camera.view;
@@ -106,7 +121,11 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     
       shader.bind();
       vao.bind();
-      vao.draw(gl.POINST,length);
+
+      // gl.drawElements(gl.LINES, 16, gl.UNSIGNED_SHORT, index_buffer);
+      // 522; <---
+    
+      vao.draw(gl.TRIANGLES,length);
       vao.unbind();
   })
 

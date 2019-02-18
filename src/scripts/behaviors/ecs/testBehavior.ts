@@ -6,16 +6,17 @@ import glShader from 'gl-shader';
 import glGeometry from 'gl-geometry';
 const glBuffer =  require('gl-buffer');
 const glVao = require('gl-vao');
+import { getComponent } from '../../system/helpers/system';
 
 
 declare interface IDrawObject{
-  geo?:any;
+
   gl?:any;
   model?:any;
   shaders?:any;
-  complex?:any;
   drawMode?:any;
   buffers?:any;
+
 }
 
 declare interface IShader{
@@ -26,122 +27,121 @@ declare interface IShader{
 const DRAW_LIBRARY = new Map<number, any>();
 
 // export const rule = (element)=>{
-//      return element.shaders && element.behaviors.includes('draw') 
-// }   
+//      return element.shaders && element.behaviors.includes('draw')
+// }
+
 
 /**
  * updat function draws data to screen
- * @param gl 
- * @param element 
- * @param camera 
- * @param uid 
+ * @param gl
+ * @param element
+ * @param camera
+ * @param uid
  */
+
+const goemsRef = getComponent('geom')
+const fontLoaderRef = getComponent('fontLoader');
+
 export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => {
-
-
+  
+  const geoms2 = goemsRef(uid).data;
+  const fontLoader2 = fontLoaderRef(uid).data;
+  
+  const before = window.performance.now();
   if (!DRAW_LIBRARY.get(uid)) {
-    const {buffers} = element;
-    const {vert,frag} = element.shaders[0]
-    const shader = glShader(gl,vert,frag);
+    const { buffers } = element;
+     // enable derivatives for face normals
+    const ext = gl.getExtension('OES_standard_derivatives');
+    if (!ext) { throw new Error('derivatives not supported'); }
+
 
     
     // create all shaders from vertex en fragemnt
     const geoms = element.shaders.map(({ vert, frag }) => {
-        const shader = glShader(gl, vert, frag);
-        const {attributes} = shader;
-        const _attributes = [];
-        // per shader
-        Object.keys(attributes).forEach((key, i) => {
-  
-          // set location (pointer) of attribute
-          attributes[key].location = i;
-          // read data from vao (array of vertex aray objects)
-          if(!buffers[key]){
-            console.error(`BUFFER ERROR ${uid}: ${key}, is not in buffers. Element will not be drawn by draw2d behavior.`,buffers)
-          }else{
-            const { buffer, offset, stride, type } = buffers[key];
-         
-            // add vertex array Object to vertexArrayObject
-            _attributes.push({
-              buffer: glBuffer(gl, buffer),
-              type: gl.FLOAT,//gl[type],
-              size: stride / 4,
-            });
-          }
-        });
-
-        const vao = glVao(gl, _attributes);
-        console.log('_attributes',vao)
-        return {
-            shader,
-            vao,
+      const shader = glShader(gl, vert, frag);
+      const {attributes} = shader;
+      const _attributes = [];
+      
+      
+      // per shader
+      Object.keys(attributes).forEach((key, i) => {
+        // set location (pointer) of attribute
+        attributes[key].location = i;
+        // read data from vao (array of vertex aray objects)
+        if(!buffers[key]){
+          console.error(`BUFFER ERROR ${uid}: ${key}, is not in buffers. Element will not be drawn by draw2d behavior.`,buffers)
+        }else{
+          const { buffer, offset, stride, type } = buffers[key];
+          
+          // add vertex array Object to vertexArrayObject
+          _attributes.push({
+            buffer: glBuffer(gl, buffer),
+            type: gl.FLOAT,//gl[type],
+            size: stride / 4,
+          });
         }
+      });
+
+      // gl.drawElements(type, size || this.indexBuffer.data.length, gl.UNSIGNED_SHORT, (start || 0) * 2 );
+      // const _elements =  buffers.index ?  glBuffer(gl,buffers.index.buffer) : undefined
+      // debugger
+      // new Uint16Array([0, 1, 2, 0, 2, 3])
+      const _elements = glBuffer(gl, 
+        buffers.index.buffer,//new Uint16Array([0, 1, 2, 0, 2, 3]), 
+        gl.ELEMENT_ARRAY_BUFFER,
+        gl.STATIC_DRAW)
+        // debugger
+
+        
+        const vao = glVao(gl, _attributes,_elements);//,_elements);
+      
+      const stride = 12 , size = 3;
+      const length = buffers.index 
+        ? buffers.index.buffer.length
+        : buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
+
+        // const length = buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
+      console.log('lengthlengthlength',length,3*42,buffers.index.buffer.length)
+      if(length !== 552 ){
+        console.error(`vao.draw:error: ${length} !== 552,   ${buffers.index.buffer.length}`)
+      }
+      return {
+        length,
+        shader,
+        vao,
+      }
     });
 
-
     
-    
-    shader.attributes.position.location = 0;
-    shader.attributes.color.location = 1;
-    const stride = 12 , size = 3;
-    const length = ((buffers.position.buffer.length )/ (stride/size));
 
-    
-    // 42
-    const vao = glVao(gl, [
-        // { 
-        //     "buffer": glBuffer(gl, [-1, 0, 0, -1, 1, 1]),
-        //     "type": gl.FLOAT,
-        //     "size": 2,
-        // },
-        { 
-            "buffer": glBuffer(gl, buffers.position.buffer),
-            "type": gl.FLOAT,
-            "size": 3 ,
-        },
-        { 
-            "buffer": glBuffer(gl,buffers.colors.buffer),
-            "type": gl.FLOAT,
-            "size": 3 ,
-        },
-        
-        
-      ]);
+    DRAW_LIBRARY.set(uid, {  geoms });
 
-    //   debugger
-    DRAW_LIBRARY.set(uid, { geoms,shader,vao });
-    console.log('_attributes',vao)
   }
 
-
-  const { shader, vao,geoms } = DRAW_LIBRARY.get(uid);
   
 
-//   geoms.forEach((geom,index:number) =>{
-//     const {shader,vao} = geom;
-//     const uniforms =  element.shaders[index].uniforms;
-//     Object.assign(shader.uniforms, uniforms);
-//     // shader.uniforms.model = element.model;
-//     // shader.uniforms.projection = camera.projection;
-//     // shader.uniforms.view = camera.view;
-//     // shader.uniforms.color = [1, 0, 0];
+  const { geoms } = DRAW_LIBRARY.get(uid);
 
-  
-//     shader.bind();
-//     vao.bind();
-//     vao.draw(gl.POINST);
-//     vao.unbind();
-// })
+  geoms.forEach((geom,index:number) =>{
+      const {shader, vao, length} = geom;
+      const uniforms =  element.shaders[index].uniforms;
+      Object.assign(shader.uniforms, uniforms);
+      // shader.uniforms.model = element.model;
+      // shader.uniforms.projection = camera.projection;
+      // shader.uniforms.view = camera.view;
+      // shader.uniforms.color = [1, 0, 0];
 
-  //Bind the shader
-  shader.bind()
-
-  //Bind vertex array object and draw it
-  vao.bind();
-  vao.draw(gl.POINST,3*42);
-
-  //Unbind vertex array when fini
-  vao.unbind();
-  
+    
+      shader.bind();
+      vao.bind();
+      
+      // gl.drawElements(gl.LINES, 16, gl.UNSIGNED_SHORT, index_buffer);
+      // 522; <---
+      gl.disable(gl.CULL_FACE);
+      vao.draw(gl.TRIANGLES,length);
+      gl.enable(gl.CULL_FACE);
+      vao.unbind();
+  })
+ //window.performance.now() - before);
 
 };
