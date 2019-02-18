@@ -402,7 +402,6 @@ const SDFTextContent = (gl, props = { width: 200 }) => {
             // registration.unregister()
             // setTimeout(()=>registration.unregister(),1000);
 
-     
             const square = createSquare();
             // console.log('text:square',stringify(square))
             // registerElement(square)

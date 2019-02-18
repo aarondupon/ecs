@@ -1,18 +1,22 @@
 
 import { default as createSytstem, createTable, getTable } from './helpers/system';
-// import {BEHAVIOR_TABLES} from './helpers/behavior';
+import {jsUcfirst, getBehaviorName, getSystemName } from './helpers/utils';
 
 import config from './config';
-import { first } from 'rxjs/operators';
-import { Context } from 'vm';
-// import system from './DrawSystem';
+
+interface IElements{
+  [index: string]: any;
+  [index: number]: any;
+}
+
+declare interface IElement{
+  uid: string;
+  behaviors:string[];
+}
 
 let ready = false;
-const load = true;
 const elements:IElements = new Map();
 const queue = [];
-
-const jsUcfirst = (string) => string.charAt(0).toUpperCase() + string.slice(1);
 
 const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 const ARGUMENT_NAMES = /([^\s,]+)/g;
@@ -21,12 +25,6 @@ const ECS_RENDER_SYSTEMS = [];
 
 let BEHAVIOR_NAMES = [];
 
-const getBehaviorName  = (path) => {
-  return path.match(/([^\/]+)(?=Behavior\.\w+$)/)[0];
-};
-
-const getSystemName = (filename) =>
-`ESC${jsUcfirst(filename.replace('./', '').replace('.ts', '')).replace('Behavior', 'System')}`;
 // @ts-ignore
 const importBehaviors = require.context('../behaviors/ecs', true, /Behavior.ts$/);
 
@@ -164,10 +162,7 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
   return ECS_SYSTEMS;
 }
 
-// if (load) loadBehaviors();
-// load = false;
-
-export const createRenderSystem = (context:Context) => {
+export const createRenderSystem = (context) => {
   const ECS_SYSTEMS = [];
   const ECS_BEHAVIORS = [];
   const system = { context, ECS_SYSTEMS, ECS_BEHAVIORS, name:'main' };
@@ -178,27 +173,8 @@ export const createRenderSystem = (context:Context) => {
 
 };
 
-interface IElements{
-  [index: string]: any;
-  [index: number]: any;
-}
 
-declare interface IElement{
-  uid: string;
-  behaviors:string[];
-}
 
-function removeFromAllSystem(element:IElement, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS) {
-  element.behaviors.forEach(behaviorName => {
-    const system =  ECS_SYSTEMS.find(x => x.name === getSystemName(behaviorName + 'Behavior'));
-    // if (behaviorName !== 'test2') {
-      // console.log('removefrom', element.uid, system.name,system.size);
-    system.delete(element.uid);
-    console.log('removefrom', element.uid, system.name, system.size);
-    // }
-
-  });
-}
 
 function removeFromSystems(uid:string, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS) {
   behaviorNames.forEach(behaviorName => {
@@ -206,18 +182,6 @@ function removeFromSystems(uid:string, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAV
     system.delete(uid);
     console.log('removefrom', uid, system.name, system.size);
   });
-}
-
-function removeFromSystem(element:IElement, behaviorName:string, ECS_SYSTEMS) {
-  const system =  ECS_SYSTEMS.find(x => x.name === getSystemName(`${behaviorName}Behavior`));
-  console.log('removefrom', element.uid, system.name, system.size);
-  system.delete(element.uid);
-}
-
-export function registerOnce(element, target= 'main') {
-  element.removeAfterUpdate = true;
-  const registration = register(element, target);
-  return registration;
 }
 
 const register = (element, target= 'main') => {
@@ -237,25 +201,19 @@ const register = (element, target= 'main') => {
     queue.push(element);
   }
 
-  function unregister(behaviorNames= []) {
-
-    if (ECS_RENDER_SYSTEM) {
-      const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
-      removeFromAllSystem(element, BEHAVIOR_NAMES, ECS_SYSTEMS, ECS_BEHAVIORS);
-    }
-
+  function unregisterInternal(behaviorNames= []) {
+    // const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
+    unregister(element.uid, element.behaviors, element.target);
   }
 
   function removeFromSystemByBehaviorName(behaviorName:string) {
     if (ECS_RENDER_SYSTEM) {
       const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
-      removeFromSystem(element, behaviorName, ECS_SYSTEMS);
+      removeFromSystems(element.uid, [behaviorName], ECS_SYSTEMS, ECS_BEHAVIORS);
     }
   }
 
-  element.unregister = unregister;
-
-  return { element, unregister, removeFromSystemByBehaviorName };
+  return { element, unregister:unregisterInternal, deleteFrom:removeFromSystemByBehaviorName };
 };
 
 export function unregister(uid:string, behaviorNames:string[], target:string= 'main') {

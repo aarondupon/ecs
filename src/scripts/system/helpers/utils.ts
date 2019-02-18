@@ -4,3 +4,15 @@ export const connect = (state:any, props:any) => {
       return obj;
     },                        {});
   };
+
+
+
+export const jsUcfirst = (string) => string.charAt(0).toUpperCase() + string.slice(1);
+
+
+export const getBehaviorName  = (path) => {
+  return path.match(/([^\/]+)(?=Behavior\.\w+$)/)[0];
+};
+
+export const getSystemName = (filename) =>
+`ESC${jsUcfirst(filename.replace('./', '').replace('.ts', '')).replace('Behavior', 'System')}`;
