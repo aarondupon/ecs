@@ -17,26 +17,6 @@ const jsUcfirst = (string) => string.charAt(0).toUpperCase() + string.slice(1);
 const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 const ARGUMENT_NAMES = /([^\s,]+)/g;
 
-function getParamNames(func) {
-  const fnStr = func.toString().replace(STRIP_COMMENTS, '');
-  let result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
-  if (result === null) {
-    result = [];
-  }
-  return result;
-}
-
-function getBehaviorNameFromFunction(func) {
-  if (func) {
-    const params = func.toString(); /// getParamNames(func);
-
-    return params;
-  }
-  return undefined;
-}
-
-// export const ECSSystems = [];
-// export const ECSBehaviors = [];
 const ECS_RENDER_SYSTEMS = [];
 
 let BEHAVIOR_NAMES = [];
@@ -51,8 +31,8 @@ const getSystemName = (filename) =>
 const importBehaviors = require.context('../behaviors/ecs', true, /Behavior.ts$/);
 
 function loadBehaviors(ECS_RENDER_SYSTEMS) {
-  const { ECSSystems, ECSBehaviors, context } = ECS_RENDER_SYSTEMS;
-  // const ECSBehaviors = [];
+  const { ECS_SYSTEMS, ECS_BEHAVIORS, context } = ECS_RENDER_SYSTEMS;
+  // const ECS_BEHAVIORS = [];
 // require('../stories/index.stories');
   const origKeys = [... importBehaviors.keys()];
   const firstKeys = [];
@@ -68,7 +48,8 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
       return check;
 
     });
-    if (res) {firstKeys.push(res);
+    if (res) {
+      firstKeys.push(res);
       origKeys.splice(origKeys.indexOf(res), 1);
     }else {
       console.warn(`register.js: autoloader behavior spelling error
@@ -87,7 +68,8 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
       return check;
 
     });
-    if (res) {lastKeys.push(res);
+    if (res) {
+      lastKeys.push(res);
       origKeys.splice(origKeys.indexOf(res), 1);
     }else {
       console.warn(`register.js: autoloader spelling error ${name}
@@ -113,18 +95,20 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
     // example name is drawBehavior.js  --> short name is draw
     // iterates over behavior of current element array property
     // if has behavior add to array of behavior ESC sytstemm
-      const rule =  (element) => (element.behaviors && element.behaviors.includes(getBehaviorName(filename)));
+      const rule =  (element) =>
+        (element.behaviors && element.behaviors.includes(getBehaviorName(filename)));
+
       const behavior = {
+        behaviorFuntionName,
         update:behaviorModule.update,
         rule: behaviorModule.rule || rule,
         mName: behaviorModule.name || getSystemName(filename) ,
         task: behaviorModule.task,
-        behaviorFuntionName,
         behaviorName: (behaviorFuntionName || '').replace('Behavior', ''),
 
       };
 
-      ECSBehaviors.push(behavior);
+      ECS_BEHAVIORS.push(behavior);
       const name = getSystemName(filename);
       if (!window[name]) {
         window[name] = name;
@@ -147,19 +131,16 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
             ? (getTable(behavior.behaviorName) || createTable(behavior.behaviorName))
             : undefined;
 
+        const taskTableName = `${behavior.behaviorName}.task`;
         const tasktable = behavior.behaviorName !== ''
-        ? (getTable(behavior.behaviorName + '.task') || createTable(behavior.behaviorName + '.task'))
-        : undefined;
+          ? (getTable(taskTableName) || createTable(taskTableName))
+          : undefined;
 
-        // function taskWithContext (...args){
+        const ECS_SYSTEM = createSytstem(context, update,  behavior.task, name, table, tasktable);
 
-        //   behavior.task.call(this,...args,context)
-        // }
-        const ESCSystem = createSytstem(context, update,  behavior.task, name, table, tasktable);
-
-        ESCSystem.setPool(elements);
+        ECS_SYSTEM.setPool(elements);
         console.log('ESCSystem');
-        ECSSystems.push(ESCSystem);
+        ECS_SYSTEMS.push(ECS_SYSTEM);
       }
 
       ready = true;
@@ -169,31 +150,31 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
 
         while (queue.length > 0) {
           const element = queue.shift();
-          addToSystem(element, pointer, origKeys, ECSSystems, ECSBehaviors);
+          addToSystem(element, pointer, origKeys, ECS_SYSTEMS, ECS_BEHAVIORS);
           pointer ++;
 
         }
 
       }
 
-      console.log('behavior loaded', filename, ECSSystems);
+      console.log('behavior loaded', filename, ECS_SYSTEMS);
     }
   });
 
-  return ECSSystems;
+  return ECS_SYSTEMS;
 }
 
 // if (load) loadBehaviors();
 // load = false;
 
 export const createRenderSystem = (context:Context) => {
-  const ECSSystems = [];
-  const ECSBehaviors = [];
-  const system = { name:'main', context, ECSSystems, ECSBehaviors };
+  const ECS_SYSTEMS = [];
+  const ECS_BEHAVIORS = [];
+  const system = { context, ECS_SYSTEMS, ECS_BEHAVIORS, name:'main' };
   ECS_RENDER_SYSTEMS.push(system);
 
   loadBehaviors(system);
-  return ECSSystems;
+  return ECS_SYSTEMS;
 
 };
 
@@ -207,9 +188,9 @@ declare interface IElement{
   behaviors:string[];
 }
 
-function removeFromAllSystem(element:IElement, behaviorNames= [], ECSSystems, ECSBehaviors) {
+function removeFromAllSystem(element:IElement, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS) {
   element.behaviors.forEach(behaviorName => {
-    const system =  ECSSystems.find(x => x.name === getSystemName(behaviorName + 'Behavior'));
+    const system =  ECS_SYSTEMS.find(x => x.name === getSystemName(behaviorName + 'Behavior'));
     // if (behaviorName !== 'test2') {
       // console.log('removefrom', element.uid, system.name,system.size);
     system.delete(element.uid);
@@ -219,23 +200,23 @@ function removeFromAllSystem(element:IElement, behaviorNames= [], ECSSystems, EC
   });
 }
 
-function removeFromSystems(uid:string, behaviorNames= [], ECSSystems, ECSBehaviors) {
+function removeFromSystems(uid:string, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS) {
   behaviorNames.forEach(behaviorName => {
-    const system =  ECSSystems.find(x => x.name === getSystemName(behaviorName + 'Behavior'));
+    const system =  ECS_SYSTEMS.find(x => x.name === getSystemName(`${behaviorName}Behavior`));
     system.delete(uid);
     console.log('removefrom', uid, system.name, system.size);
   });
 }
 
-function removeFromSystem(element:IElement, behaviorName:string, ECSSystems) {
-  const system =  ECSSystems.find(x => x.name === getSystemName(behaviorName + 'Behavior'));
+function removeFromSystem(element:IElement, behaviorName:string, ECS_SYSTEMS) {
+  const system =  ECS_SYSTEMS.find(x => x.name === getSystemName(`${behaviorName}Behavior`));
   console.log('removefrom', element.uid, system.name, system.size);
   system.delete(element.uid);
 }
 
 export function registerOnce(element, target= 'main') {
   element.removeAfterUpdate = true;
-  const registration = register(element, target= 'main');
+  const registration = register(element, target);
   return registration;
 }
 
@@ -244,33 +225,31 @@ const register = (element, target= 'main') => {
   const pointer = elements.size;
   const ECS_RENDER_SYSTEM = ECS_RENDER_SYSTEMS.find(x => x.name === target);
   element.target =  target;
-  
+
   elements.set(pointer, element);
   if (ready) {
     if (ECS_RENDER_SYSTEM) {
-      const { ECSSystems, ECSBehaviors } = ECS_RENDER_SYSTEM;
-      addToSystem(element, pointer, BEHAVIOR_NAMES, ECSSystems, ECSBehaviors);
+      const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
+      addToSystem(element, pointer, BEHAVIOR_NAMES, ECS_SYSTEMS, ECS_BEHAVIORS);
     }
 
-  }
-    // add to queue
-  else {
+  } else { // add to queue
     queue.push(element);
   }
 
   function unregister(behaviorNames= []) {
 
     if (ECS_RENDER_SYSTEM) {
-      const { ECSSystems, ECSBehaviors } = ECS_RENDER_SYSTEM;
-      removeFromAllSystem(element, BEHAVIOR_NAMES, ECSSystems, ECSBehaviors);
+      const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
+      removeFromAllSystem(element, BEHAVIOR_NAMES, ECS_SYSTEMS, ECS_BEHAVIORS);
     }
 
   }
 
   function removeFromSystemByBehaviorName(behaviorName:string) {
     if (ECS_RENDER_SYSTEM) {
-      const { ECSSystems, ECSBehaviors } = ECS_RENDER_SYSTEM;
-      removeFromSystem(element, behaviorName, ECSSystems);
+      const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
+      removeFromSystem(element, behaviorName, ECS_SYSTEMS);
     }
   }
 
@@ -279,12 +258,11 @@ const register = (element, target= 'main') => {
   return { element, unregister, removeFromSystemByBehaviorName };
 };
 
-
-export function unregister(uid:string,behaviorNames:string[],target:string='main') {
+export function unregister(uid:string, behaviorNames:string[], target:string= 'main') {
   const ECS_RENDER_SYSTEM = ECS_RENDER_SYSTEMS.find(x => x.name === target);
   if (ECS_RENDER_SYSTEM) {
-    const { ECSSystems, ECSBehaviors } = ECS_RENDER_SYSTEM;
-    removeFromSystems(uid, behaviorNames, ECSSystems, ECSBehaviors);
+    const { ECS_SYSTEMS, ECS_BEHAVIORS } = ECS_RENDER_SYSTEM;
+    removeFromSystems(uid, behaviorNames, ECS_SYSTEMS, ECS_BEHAVIORS);
   }
 }
 
@@ -294,19 +272,19 @@ export function unregister(uid:string,behaviorNames:string[],target:string='main
  * @param pointer
  * @param behaviorNames
  */
-function addToSystem(element, pointer, behaviorNames= [], ECSSystems, ECSBehaviors) {
+function addToSystem(element, pointer, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS) {
   let behaviorExist = false;
-  ECSBehaviors.forEach((behavior, index) => {
+  ECS_BEHAVIORS.forEach((behavior, index) => {
     // TODO: remove old way
     if (behavior.rule && behavior.rule(element) && !behavior.behaviorName) {
 
-      ECSSystems[index].add(pointer);
+      ECS_SYSTEMS[index].add(pointer);
       behaviorExist = true;
     }
 
     // new way start
     if (behavior.rule && behavior.rule(element) && behavior.behaviorName) {
-      ECSSystems[index].start(element);
+      ECS_SYSTEMS[index].start(element);
       behaviorExist = true;
     }
 

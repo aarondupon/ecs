@@ -215,7 +215,7 @@ const createTextObject =(buffers,width) => {
     </Identety>
     */
     
-    const comp =  createESCElement(
+    let comp =  createESCElement(
         fontLoaderBehavior({
             font: '/public/fonts/din/DIN-Regular.fnt',
             image: '/public/fonts/din/DIN-Regular.png',
@@ -250,6 +250,18 @@ const createTextObject =(buffers,width) => {
     )(
         baseObj  
     );
+
+
+
+    // comp = translate3dBehavior({position:[200,200,0]})(comp);
+    
+    
+ 
+    
+    // updateTranslate3d(comp.uid,{position:[10,10,0]})
+
+
+    
 
     return comp;
     

@@ -251,6 +251,7 @@ function createSytstem(
       tasksTable.forEach((data, uid) => {
         const element =  GLOBAL_ELEMENTS_TABLE.get(uid);
         update(gl, data, camera,element);
+        // deleteByUid(element.uid)
       });
 
       return tasksTable.size;
@@ -259,7 +260,11 @@ function createSytstem(
     if (table && !task) {
       table.forEach((data, uid) => {
         const element =  GLOBAL_ELEMENTS_TABLE.get(uid);
-        if(element)update(gl, data, camera,element);
+        if(element){
+          update(gl, data, camera,element);
+          // deleteByUid(element.uid);
+         
+        }
       });
     }
 

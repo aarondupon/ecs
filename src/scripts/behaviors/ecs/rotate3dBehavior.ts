@@ -63,3 +63,8 @@ export const update = (gl:any, component:IRotationComponent, camera:any,element:
 
   element.model = model;  
 };
+
+export const subscribe = (gl:any, component:IRotationComponent, camera:any,element:IElement) => {
+
+}
+

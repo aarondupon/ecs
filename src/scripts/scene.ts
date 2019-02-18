@@ -3,6 +3,7 @@ import createTorus from './create-torus';
 import createSdfcontentText from './create-sdfcontent-text';
 import * as createTexture from 'gl-texture2d';
 import {default as hex } from 'hex2rgb';
+import {getComponent,getTable, getTaskTable} from './system/helpers/system';
 import { drawChildren, translate, composition } from './behaviors';
 import addBehavior from './compose/operators/addBehavior';
 import createElement from './compose/createElement';
@@ -42,9 +43,16 @@ export default function scene(gl, images) {
 
   // registration.unregister()
   // setTimeout(()=>registration.unregister(),1000);
+  // const translate3dTable = getTable('translate3d') // TODO CHEck if exist
 
   return function updateScene(time, camera) {
-      // console.log('update')
+
+    // const data  = translate3dTable.get('text-component');
+    // if(data){
+    //   data.position = [100+100*Math.sin(time*.01),10,0]
+    // }
+  
+    
 
   };
 }
