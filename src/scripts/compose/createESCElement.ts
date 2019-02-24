@@ -6,6 +6,7 @@ declare interface IElement{
   uid: string;
   model:mat4;
   projection:mat4;
+  registered:boolean;
   view:mat4;
   behaviors:string[];
   parent?:any;

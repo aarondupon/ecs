@@ -19,20 +19,20 @@ const createBehavior = (behavior?:(behaviorData:any) => any) => {
       const { uid } = element;
       const intializedProps = behavior ? behavior(props) : props;
       tabel.set(uid, intializedProps);
-      
+
       // TODO: needs to be removed not needed!
       const comp =  {
         ...element,
         behaviors: [...(element.behaviors || []), behaviorName],
       };
-      
+
       return comp;
     }
     const comp =  {
       ...element,
       behaviors: [...(element.behaviors || []), behaviorName],
     };
-    debugger;
+
     return comp;
   };
   return wrapper;

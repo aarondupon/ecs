@@ -2,8 +2,8 @@
 import { default as createState } from './state';
 import FpsController from './FpsController';
 import { info } from './message';
-import { merge, Observable, Subscription, ReplaySubject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { merge, Observable, Subscription, ReplaySubject, combineLatest } from 'rxjs';
+import { take, scan, filter, map, debounceTime, throttleTime, bufferTime, takeWhile, bufferCount } from 'rxjs/operators';
 
 interface ObservableMap<K, V> {
   clear(): void;
@@ -12,10 +12,24 @@ interface ObservableMap<K, V> {
   get(key: K): V | undefined;
   has(key: K): boolean;
   set(key: K, value: V): Map<any, any>;
+  update(key: K, value: V): Map<any, any>;
   readonly size: number;
   subscribe: (observer?, error?, complete?) => Subscription;
   unsubscribe:  () => void;
   subject:ReplaySubject<any>;
+}
+
+export interface System{
+  componentGroup:string[];
+  add(index:number):void;
+  delete(key:string): void;
+  id:string;
+  name:string;
+  remove(ptr:string):void;
+  render(gl:any, updateTime:number, camera:any):void;
+  setPool(elements:any):void;
+  start(element:object):object;
+  time:number;
 }
 
 const SYSTEM_TABLES = new Map<string, ObservableMap<string, any>>();
@@ -39,6 +53,22 @@ function runTask(behaviorData, element, task, complete, context) {
 
 let UID = 0;
 
+// function getComponentGroup(uid:string,groups:string[]){
+//   return groups.reduce((group,componentName,idx)=>{
+//       return {...group,...getTable(componentName).get(uid)}
+//   },{})
+// }
+
+function getComponentGroupTables(groups:string[]):(uid:string) => {} {
+  if (!groups) return;
+  const tables =  groups.reduce((tables, componentName, idx) => {
+    return [...tables, getTable(componentName)];
+  },                            []);
+
+  return (uid:string):any =>
+     tables.reduce((values, table) => ({ ...values, ...table.get(uid) }), {});
+}
+
 export function createTable(name:string):ObservableMap<string, any> {
   if (SYSTEM_TABLES.get(name)) {
     console.error(`table ${name} already exists, check behavior`);
@@ -53,7 +83,15 @@ export function createTable(name:string):ObservableMap<string, any> {
     forEach:(callbackfn) => table.forEach(callbackfn),
     get:(key) => table.get(key),
     has:(key) => table.has(key),
+    // TODO set and update should be the same function
     set:(key, value) => {
+      const res =  table.set(key, value);
+      table$.next({ key, value });
+      return  res;
+    },
+    update:(key, state) => {
+      const oldState = table.get(key);
+      const value = { ...oldState, ...state };
       const res =  table.set(key, value);
       table$.next({ key, value });
       return  res;
@@ -61,7 +99,7 @@ export function createTable(name:string):ObservableMap<string, any> {
     get size() {
       return table.size;
     },
-    get subject():any {
+    get subject():ReplaySubject<any> {
       return table$;
     },
     subscribe:(observer, error, complete):Subscription => {
@@ -76,11 +114,13 @@ export function createTable(name:string):ObservableMap<string, any> {
 
 declare interface IGroup{
   data:Object;
+  value:Object;
   subscribe: (observer?, error?, complete?) => Subscription;
   onTask: (observer?, error?, complete?) => Subscription;
 }
 declare interface IComponent{
   uid:string;
+  value?:any;
 }
 
 function convertMapToComponentData(data) {
@@ -107,6 +147,7 @@ export function getComponent(behaviorName:string):any {
 
     return {
       data:newData, // { ...oldData, ...newData },
+      value:{ ...oldData, ...newData },
       subscribe:(observer, error, complete) => mergeData.subscribe(observer, error, complete),
       onTask:(observer, error, complete) =>
         tasksTable.subject
@@ -114,6 +155,39 @@ export function getComponent(behaviorName:string):any {
         .subscribe(observer, error, complete),
     };
   };
+}
+
+export function getComponentList(uid:string) {
+  const list:object[] = [];
+  if (SYSTEM_TABLES) {
+
+    SYSTEM_TABLES.forEach((systemTable, key) => {
+      const component = systemTable.get(uid);
+      if (component) {
+        list.push({ key, component });
+      }
+    });
+
+  }
+  return list;
+}
+
+export function getComponentNames(uid:string) {
+  const list:string[] = [];
+  if (SYSTEM_TABLES) {
+
+    SYSTEM_TABLES.forEach((systemTable, key) => {
+      const component = systemTable.get(uid);
+      if (component) {
+        list.push(key);
+      }
+    });
+  }
+  return list;
+}
+
+export function getComponentValue(name:string, prop:string):() => {} {
+  return () => SYSTEM_TABLES.get(name)[prop];
 }
 
 export function getTable(name:string):ObservableMap<string, any> {
@@ -125,23 +199,80 @@ export function getTaskTable(name:string):ObservableMap<string, any> {
 
 function createSytstem(
     context,
-    update,
+    camera,
+    update?,
     task?,
+    onUpdate?,
+    onUpdateGroup?,
+    componentGroup?,
     name?,
     table?:ObservableMap<string, any>,
-    tasksTable?:ObservableMap<string, any>) {
+    tasksTable?:ObservableMap<string, any>):System {
 
   const state  = createState();
+
+  const getComponentGroup = getComponentGroupTables(componentGroup);
+
   const fpsController = new FpsController();
   const GLOBAL_ELEMENTS_TABLE =
     getTable('GLOBAL_ELEMENTS_TABLE') || createTable('GLOBAL_ELEMENTS_TABLE');
+
+ // reactive
+  if (onUpdateGroup) {
+    if (componentGroup) {
+      info(`${name}: el. ${componentGroup.toString()} reactive stream onUpdateGroup will start`, 'yellow');
+    // table.subject
+
+      const getComponentTable$ = (groups:string[]) => {
+        return groups.reduce((tables, componentName, idx) => {
+          const table = getTable(componentName);
+          if(!table){
+            throw `table error: ${componentName} component does not exist.
+            componentGroup for ${name} can't be created`;
+            return;
+          }
+          return [
+            ...tables,
+            table.subject.pipe(
+            // filter(component => component.key === element.uid),
+          ),
+          ];
+        },                   []);
+      };
+      const elements = [];
+      combineLatest(
+      ...getComponentTable$(componentGroup),
+      // TODO: chack why a.key is not correct
+      (...components:any[]):any => ({
+        uid:components[0].key,
+        element:GLOBAL_ELEMENTS_TABLE.get(components[0].key),
+        value:components.reduce((obj,component,i)=>
+        ({...obj,[componentGroup[i]]:component.value}),{}),
+      }))
+      .pipe(
+        filter(groupEl => groupEl.element),
+        bufferTime(1000 / 30),
+        // bufferCount(3000),
+        filter(val => val.length > 0),
+        scan((buffers:any[], values:any[], index:number):any => {
+          buffers[0] = values.map(group => group.value);
+          buffers[1] = values.map(group => group.element);
+          return buffers;
+        },   []),
+      )
+
+      .subscribe(([values, elements]) => {
+        onUpdateGroup(context, values, camera, elements);
+      });
+    }
+  }
 
   function handleTaskComplete(element, data, oldData) {
     const { uid } = element;
     tasksTable.set(uid, data);
     // table.delete(uid);
-
   }
+
   function handleTaskError(element, error) {
     const { uid } = element;
     console.error(`TASK: elemnt ${uid} could not complete task`, error);
@@ -160,12 +291,49 @@ function createSytstem(
 
     const error = (element) => (error) => handleTaskError(element, error);
 
-    info(`${name}: el. ${element.uid} registered, update started`);
-
+    // render loop
+    if (update) info(`${name}: el. ${element.uid} registered, update started`);
+    if (!task) {
+      table.set(element.uid, behaviorData);
+    }
+    // run task once
     if (task) {
       runTask(behaviorData, element, task, complete(element), context);
       info(`${name}: el. ${element.uid} will start a taks`);
       return element;
+    }
+
+    // reactive
+    if (onUpdate) {
+      if (componentGroup) {
+        info(`${name}: el. ${element.uid} reactive stream onUpdate will start`, 'blue');
+        // table.subject
+
+        const getComponentTable$ = (groups:string[]) => {
+          return groups.reduce((tables, componentName, idx) => {
+            return [
+              ...tables,
+              getTable(componentName).subject.pipe(
+                filter(component => component.key === element.uid),
+              )];
+          },                   []);
+        };
+
+        combineLatest(
+          ...getComponentTable$(componentGroup),
+          (a:any, b:any):any => ({ ...b.value, ...a.value }))
+        .subscribe(value => {
+          onUpdate(context, value, camera, element);
+        });
+        return element;
+      }
+
+      info(`${name}: el. ${element.uid} reactive stream onUpdate will start`, 'blue');
+      table.subject
+      .pipe(filter(component => component.key === element.uid))
+      .subscribe(({ value, key }) => {
+        onUpdate(context, value, camera, element);
+      });
     }
 
     // debugger
@@ -198,7 +366,7 @@ function createSytstem(
 
   function render(gl, updateTime, camera) {
 
-    if (task) {
+    if (task && update) {
 
       tasksTable.forEach((data, uid) => {
         const element =  GLOBAL_ELEMENTS_TABLE.get(uid);
@@ -209,11 +377,18 @@ function createSytstem(
       return tasksTable.size;
     }
 
-    if (table && !task) {
+    if (table && !task && update) {
+
+      // console.log('systemsystemsystem', table.size,componentGroup,name)
       table.forEach((data, uid) => {
+
         const element =  GLOBAL_ELEMENTS_TABLE.get(uid);
+
         if (element) {
-          update(gl, data, camera, element);
+          if (componentGroup) {
+            return  update(gl, getComponentGroup(uid), camera, element);
+          }
+          return update(gl, data, camera, element);
           // deleteByUid(element.uid);
         }
       });
@@ -221,7 +396,6 @@ function createSytstem(
 
     // TODO REMOVE OLD CODE !
     for (let i = 0; i < state.bufferCount; i += 1) {
-
       const data =  state.POINTERS_TO_ELEMENTS.get(i);
       // update(gl, data, camera, data.uid);
       return i;
@@ -232,6 +406,7 @@ function createSytstem(
 
   return ({
     add,
+    componentGroup,
     remove,
     setPool,
     render,

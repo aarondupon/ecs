@@ -42,7 +42,6 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
     const ext = gl.getExtension('OES_standard_derivatives');
     if (!ext) { throw new Error('derivatives not supported'); }
 
-
     
     // create all shaders from vertex en fragemnt
     const geoms = element.shaders.map(({ vert, frag }) => {
@@ -105,6 +104,8 @@ export const update = (gl, element:IDrawObject = {}, camera:any, uid:number) => 
 
   }
 
+
+  
   
 
   const { geoms } = DRAW_LIBRARY.get(uid);

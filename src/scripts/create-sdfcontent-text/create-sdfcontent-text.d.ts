@@ -41,6 +41,7 @@ declare interface SDFTextContent{
     draw(opts: SDFTextContent.SDFTextContentMethodOptions): number;
     position:Array
     parent:any,
+    uid:string,
 }
 
 /*~ If you want to expose types from your module as well, you can

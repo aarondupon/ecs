@@ -334,7 +334,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
       const line  = {
         id:lines.length+1,
         text:'',
-        start:  lines[lines.length - 1] ? lines[lines.length - 1].end : 0,
+        start:  lines[lines.length - 1] ? (lines[lines.length - 1].end || 0) : 0,
         width:width,
         total:0,
       };

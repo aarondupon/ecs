@@ -147,7 +147,7 @@ function getStyle(styles = {},style = {} ){
 }
 
 export default function createStyle(styles,style) {
-    const parsedStyle = getStyle(styles,style)
+    const parsedStyle = getStyle({...styles},{...style})
     let newStyle = {}
 
     var computeDocumementStyle = getComputeDocumementStyle()
@@ -160,7 +160,7 @@ export default function createStyle(styles,style) {
             console.error(`lineHeight: IS NOT A NUMBER: createStyle()
                 stylesIndexs.styles[0].style =`,v.lineHeight)
         }
-        console.log('key',newStyle[key] )
+        // console.log('key',newStyle[key] )
     })
     return newStyle;
 }

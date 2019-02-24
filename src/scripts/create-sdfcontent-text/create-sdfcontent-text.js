@@ -179,20 +179,14 @@ const createSquare = (rect= [1.,1.]) => {
     return comp
 };
 
-
-const createTextObject =(buffers,width) => {
-  
+let i = 0;
+const createTextObject =(buffers,baseObj,width) => {
+    i++;
     const model = mat4.create();
     const position = [100,100, 0];
     const scale = [1, 1];
     
-    const baseObj = {
-        uid:'text-component',
-        projection: new Float32Array(16),
-        view: new Float32Array(16),
-        model, // our model-space transformations  
-    }
-    
+ 
     /*
     <ESCElement>
         <fontLoader/>
@@ -236,23 +230,22 @@ const createTextObject =(buffers,width) => {
                     }
                 }]}),
         translate3dBehavior({
-            position:[100,100,0],
+            position:[window.innerWidth/2,window.innerHeight/2,0],
         }),
         rotate3dBehavior({
             rotation:[0,0,0],
         }),
-        scale3dBehavior({
-            scale:[1,1,1]
-        }),
-        test2Behavior({ // drawing
-        }),
+        // scale3dBehavior({
+        //     scale:[1,1,1]
+        // }),
+        // test2Behavior({ // drawing
+        // }),
         // addBehavior('composition'),//,'test'),
     )(
         baseObj  
     );
 
-
-
+    
     // comp = translate3dBehavior({position:[200,200,0]})(comp);
     
     
@@ -371,44 +364,73 @@ const createTextObject =(buffers,width) => {
             "position":{buffer:positionsXYZ,type:'FLOAT',size:2,stride:2*4,offset:0},
             "color":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
         } 
+     
         return buffers
     };
 
+    var renderCount = 1;
+    const buffersMerged = {
+        "index":{buffer:[]},
+        // "position2D":{buffer:positions,type:'FLOAT',size:2,stride:2*4,offset:0},
+        // update! keep it simple
+        "size":{buffer:[],type:'FLOAT',size:1,stride:1*4,offset:0},
+        "coord":{buffer:[],type:'FLOAT',size:2,stride:2*4,offset:0},
+        "position":{buffer:[],type:'FLOAT',size:2,stride:2*4,offset:0},
+        "color":{buffer:[],type:'FLOAT',size:3,stride: 3*4,offset:0},
+    } 
 const SDFTextContent = (gl, props = { width: 200 }) => {
+    
+    const create = gl => {
+    
     let dirty = 0;
     let indexDirty = 0;
+    renderCount++
 
-
-    const create = gl => {
-        const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
-      
-        const nullObj = {
-            position: [0, 0, 0],
-            };
-
-        const node = createESCElement(addBehavior('translate'))(nullObj);
+    const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
+    // const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
+    const txt =  `${renderCount}:${Date.now()}`;//'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
+    
+    const baseObj = createESCElement(
+        rotate3dBehavior({
+            rotation:[0,0,0],
+        }),
+    )({
+        uid:'text-component'+renderCount,
+        projection: new Float32Array(16),
+        view: new Float32Array(16),
+        model: mat4.create(), // our model-space transformations  
+    });
+    // registerElement(node)
+    const assets = loadAssets(styles, (font, image) => {
         
-        // registerElement(node)
-        const assets = loadAssets(styles, (font, image) => {
-           
-            const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
-            const vao = createVertexArrayObject(styles,txt,font)     
 
-            const text = createTextObject(vao,props.width);
+        const vao = createVertexArrayObject(styles,txt,font)  
+        
+        buffersMerged.index.buffer.push(...vao.index.buffer);
+        buffersMerged.size.buffer.push(...vao.size.buffer);
+        buffersMerged.coord.buffer.push(...vao.coord.buffer);
+        buffersMerged.position.buffer.push(...vao.position.buffer);
+        buffersMerged.color.buffer.push(...vao.color.buffer);
+       
+        
 
-            // console.log(stringify(text,{maxLength: 1, indent: 1}))
-            const registration =  registerElement(text);
-            
-            // registration.unregister()
-            // setTimeout(()=>registration.unregister(),1000);
+        const text = createTextObject(vao,baseObj,props.width);
+        if(text.registered){
+            registerElement(text);
+        }
+        // console.log(stringify(text,{maxLength: 1, indent: 1}))
+        // console.log('texttexttext>>>:',text)
+        // const registration =  registerElement(text);
+        // registration.unregister()
+        // setTimeout(()=>registration.unregister(),1000);
+        // const square = createSquare();
+        // console.log('text:square',stringify(square))
+        // registerElement(square)
+    });
+     return baseObj;
 
-            const square = createSquare();
-            // console.log('text:square',stringify(square))
-            // registerElement(square)
-        });
-        // compose return object
-        return node;
   };
+  
 
   return create(gl);
 };

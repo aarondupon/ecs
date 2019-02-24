@@ -34,7 +34,7 @@ float median(float r, float g, float b) {
 void main(void)
 {
     float smoothing = 1. / vSize * 6.;
-    float debug = 0.0;
+    float debug = -1.0;
 
     // vec2 textureCoord = (vCoord * 2.) ¨ scale(vec2(1.0));
     float dist = texture2D(uSampler, vCoord).r;
@@ -51,16 +51,20 @@ void main(void)
         vec4 color = vec4(dist, dist, dist, alpha);
          color =   vColor*vec4(dist);
         // color = border(color,alpha);
-        gl_FragColor = vec4(color.rgb,dist);
+        gl_FragColor = vec4(color.rgb,0);
     } else {
 
         float distanceFactor = 5.;
         float sigDist = distanceFactor*(median(sample.r, sample.g, sample.b) - 0.5);
         float opacity = clamp(sigDist + .5 , 0.0, 1.0);
-        vec4 bgColor = vec4(0., 0., 0., 0.0);
+        vec4 bgColor = vec4(0., 0., 0.,.0);
         vec4 fgColor = vColor;
-       
-        gl_FragColor = mix(bgColor, fgColor,  opacity);
+       if(sigDist < 0.5) discard;
+        gl_FragColor = mix(bgColor, fgColor,  sigDist);
+        
     }
-    //  gl_FragColor = vec4(vec3(0.,1.,0.), .3);
+//  float distanceFactor = 5.;
+//         float sigDist = distanceFactor*(median(sample.r, sample.g, sample.b) - 0.5);
+       
+//      gl_FragColor = vec4(vec3(0.,1.,0.), sigDist);
 }

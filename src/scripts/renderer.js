@@ -3,7 +3,7 @@ import loop from 'canvas-loop';
 import createCamera from 'perspective-camera';
 import { timer } from 'rxjs';
 import { animationFrame } from 'rxjs/scheduler/animationFrame';
-import { scan } from 'rxjs/operators';
+import { scan , share} from 'rxjs/operators';
 import createScene from './scene';
 
 // START SYSTEM
@@ -19,7 +19,7 @@ export default function renderer(images) {
   const gl = context();
   const { canvas } = gl;
 
-  const ECSSystems = createRenderSystem(gl);
+
 
 
   const app = loop(canvas, {
@@ -27,9 +27,9 @@ export default function renderer(images) {
   }); // .on('tick', render);
 
 
-  raf(60).subscribe((dt) => {
-    render(dt);
-  });
+  // raf(60).subscribe((dt) => {
+  //   render(dt);
+  // });
 
   // create a simple perspective camera
   // contains our projection & view matrices
@@ -51,6 +51,8 @@ export default function renderer(images) {
   camera.lookAt([0, 0, 0]);
   camera.viewport = [0, 0, cameraWidth, cameraHeight];
   camera.update();
+
+  const ECSSystems = createRenderSystem(gl, camera);
 // debugger
   // create our custom scene
   const updateScene = createScene(gl, images);

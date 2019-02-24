@@ -1,4 +1,4 @@
-import { vec3, mat4 } from 'gl-matrix';
+import { vec3, mat4,quat } from 'gl-matrix';
 import behavior from '../../system/helpers/behavior';
 import { getComponent } from '../../system/helpers/system';
 
@@ -16,49 +16,78 @@ declare interface IElement{
   behaviors:string[];
 }
 
-declare interface IComponent{
+declare interface ItranslateComponent{
   uid?:string;
   position:vec3;
-  globalPositon?:vec3;
+  globalPosition?:vec3;
 }
 
 
-function translate3d(data:IComponent):IComponent {
+function translate3d(data:ItranslateComponent):ItranslateComponent {
   const defaults = { 
-    globalPositon: vec3.create(), 
+    globalPosition: vec3.create(), 
     position: vec3.create(),
   };
   return Object.assign(defaults, data);
 }
-export const translate3dBehavior: 
-(behaviorData: IComponent) => (element:IElement) => any = behavior(translate3d);
+export const translate3dBehavior:
+(behaviorData: ItranslateComponent) => (element:IElement) => any = behavior(translate3d);
 
 
-export const update = (gl:any, component:IComponent, camera:any,element:IElement) => {
+// render loop
+// export const update = (gl:any, component:ItranslateComponent, camera:any,element:IElement) => {
 
+//   const {uid} = element;
+//   const {globalPosition,position} = component;
+
+//   const parent = undefined;//element.parent ? LIBRARY.get(element.parent.uid) : undefined
+//   const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
+//   const localPosition = position;
+
+//   const model = mat4.clone(element.model);
+//   //if(!element.scale && !element.rotation) 
+//   mat4.identity(model);
+
+//   const [vpX,vpY,vpWidth,vpHeight] = camera.viewport;
+
+
+//   vec3.add(globalPosition, parentGlobalPosition, localPosition);
+//   // normalize pixel space;
+//   vec3.divide(globalPosition,globalPosition,[vpWidth,-vpHeight,1])
+//   mat4.translate(model, model,globalPosition );
+
+//   element.model = model;
+  
+
+//   // const geoms = goemsRef(uid).data;
+  
+// };
+
+// reactive
+export const onUpdate2 = (gl:any, component:ItranslateComponent, camera:any,element:IElement) => {
   const {uid} = element;
-  const {globalPositon,position} = component;
+  const {globalPosition,position} = component;
 
-  const parent = undefined;//element.parent ? LIBRARY.get(element.parent.uid) : undefined
-  const parentGlobalPosition = parent ? parent.globalPositon : [0, 0, 0];
+  const parent = undefined; // element.parent ? LIBRARY.get(element.parent.uid) : undefined
+  const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
   const localPosition = position;
 
   const model = mat4.clone(element.model);
-  //if(!element.scale && !element.rotation) 
   mat4.identity(model);
+ 
+  
 
   const [vpX,vpY,vpWidth,vpHeight] = camera.viewport;
 
 
-  vec3.add(globalPositon, parentGlobalPosition, localPosition);
+  vec3.add(globalPosition, parentGlobalPosition, localPosition);
   // normalize pixel space;
-  vec3.divide(globalPositon,globalPositon,[vpWidth,-vpHeight,1])
-  mat4.translate(model, model,globalPositon );
+  vec3.divide(globalPosition,globalPosition,[vpWidth,-vpHeight,1])
+  mat4.translate(model, model,globalPosition );
 
   element.model = model;
-  
 
-  // const geoms = goemsRef(uid).data;
+  return {globalPosition, position }
   
 };
 

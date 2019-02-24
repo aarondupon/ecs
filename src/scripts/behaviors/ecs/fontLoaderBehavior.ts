@@ -3,12 +3,12 @@ import glTexture2d from 'gl-texture2d';
 import { Observable, concat , from } from 'rxjs';
 import { concatMap, mergeMap, bufferCount, share, scan, first, tap } from 'rxjs/operators';
 import behavior from '../../system/helpers/behavior';
-import { getComponent } from '../../system/helpers/system';
+import { getComponent, getTable } from '../../system/helpers/system';
 import { Context } from 'vm';
 // import * as loadFont from 'load-bmfont';
 import * as img from 'img';
 
-export const LIBRARY = new Map<string, IFont>();
+// export const LIBRARY = new Map<string, IFont>();
 
 declare interface IFont{
   font: string;
@@ -32,9 +32,10 @@ declare interface Texture2D{
 declare interface IFontData {
   texture:Texture2D;
 }
-export const update = (gl:any, font:IFontData, camera:any, element:IElement) => {
 
-};
+// export const update = (gl:any, font:IFontData, camera:any, element:IElement) => {
+// // console.log('update font')
+// };
 
 export const task = (font:IFont, element:IElement, complete, gl) => {
 
@@ -115,6 +116,7 @@ export const task = (font:IFont, element:IElement, complete, gl) => {
       gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(16, maxAnistrophy));
     }
 
+    getTable('fontLoader').set(element.uid,{ texture:tex })
     complete({ texture:tex });
 
   });

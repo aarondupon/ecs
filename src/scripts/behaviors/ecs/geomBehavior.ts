@@ -3,7 +3,7 @@ import glTexture2d from 'gl-texture2d';
 import { Observable, concat , from } from 'rxjs';
 import { concatMap, mergeMap, bufferCount, share, scan, first, tap } from 'rxjs/operators';
 import behavior from '../../system/helpers/behavior';
-import { getComponent } from '../../system/helpers/system';
+import { getComponent, getTable } from '../../system/helpers/system';
 import { Context } from 'vm';
 // import * as loadFont from 'load-bmfont';
 import * as img from 'img';
@@ -33,9 +33,9 @@ function geom(geom) {
 }
 export const geomBehavior = behavior(geom);
 
-export const update = (gl:any, data:IGeom = {}, camera:any, element:IElement) => {
+// export const update = (gl:any, data:IGeom = {}, camera:any, element:IElement) => {
 
-};
+// };
 
 export const task = (geomData:IGeomData, element:IElement, complete, gl) => {
   const {uid} = element;
@@ -89,9 +89,9 @@ export const task = (geomData:IGeomData, element:IElement, complete, gl) => {
       console.log(
         'lengthlengthlength',
         (buffers.index.buffer.length / 3), length, 3 * 42, buffers.index.buffer.length);
-      if (length !== 552) {
-        console.error(`vao.draw:error: ${length} !== 552,   ${buffers.index.buffer.length}`);
-      }
+      // if (length !== 552) {
+      //   console.error(`vao.draw:error: ${length} !== 552,   ${buffers.index.buffer.length}`);
+      // }
       return {
         length:buffers.index.buffer.length,
         shader,
@@ -104,6 +104,8 @@ export const task = (geomData:IGeomData, element:IElement, complete, gl) => {
   }
   
     const geom = createGeom(geomData);
+    const geomsRef = getTable('geom');
+    geomsRef.set(uid,geom)
     complete(geom);
 
     // const fontLoader = getComponent('fontLoader')(uid);
