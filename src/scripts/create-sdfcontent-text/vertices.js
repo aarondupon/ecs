@@ -78,15 +78,17 @@ export function updatePositions(glyphs, sizes, infoFontSize, prevPositions) {
   return positions;
 };
 
-export function positions(glyphs, sizes, infoFontSize) {
+export function positions(glyphs, sizes, infoFontSize, offset) {
   var positions = new Float32Array(glyphs.length * 4 * 2);
   let i = 0;
   glyphs.forEach((glyph) => {
     const bitmap = glyph.data;
     const size = sizes[i];
     // bottom left position
-    const x = (glyph.position[0]);
-    const y = glyph.position[1]; 
+    const x = (glyph.position[0]) + offset[0];
+    const y = glyph.position[1] + offset[1];
+
+  
       // okay
     // quad size
     const w = bitmap.width * size;

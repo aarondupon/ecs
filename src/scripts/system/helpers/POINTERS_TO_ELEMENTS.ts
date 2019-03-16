@@ -1,7 +1,7 @@
 
 export default function POINTERS_TO_ELEMENTS(name) {
-  let t = new Map()
-  let p = []
+  const t = new Map();
+  const p = [];
   return ({
     pointers: p,
     TABEL: t,
@@ -15,7 +15,10 @@ export default function POINTERS_TO_ELEMENTS(name) {
       return this.pointers.length;
     },
     add(pointer) {
-      console.log('this.pointers',name,this.pointers)
+      if(this.pointers.find(x=>x===pointer)) {
+        return this.pointers.find(x=>x===pointer);
+      }
+
       return this.pointers.push(pointer);
     },
     get(index) {

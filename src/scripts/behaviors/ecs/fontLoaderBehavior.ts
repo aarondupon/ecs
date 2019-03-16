@@ -40,7 +40,6 @@ declare interface IFontData {
 export const task = (font:IFont, element:IElement, complete, gl) => {
 
   // cont gl  = getContext()
-  console.log('fontfontfontfont', font);
   const loadImages = (images:string[], type:string = 'parralel') => {
   // https://stackblitz.com/edit/rxjs-image-downloader?file=src%2Fapp%2Fimage-loader.service.ts
 

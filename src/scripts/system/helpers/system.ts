@@ -2,8 +2,8 @@
 import { default as createState } from './state';
 import FpsController from './FpsController';
 import { info } from './message';
-import { merge, Observable, Subscription, ReplaySubject, combineLatest } from 'rxjs';
-import { take, scan, filter, map, debounceTime, throttleTime, bufferTime, takeWhile, bufferCount } from 'rxjs/operators';
+import { merge, Observable, Subscription, ReplaySubject, combineLatest, Subject } from 'rxjs';
+import { tap,take, scan, filter, map, debounceTime, throttleTime, bufferTime, takeWhile, bufferCount, distinct, distinctUntilKeyChanged } from 'rxjs/operators';
 
 interface ObservableMap<K, V> {
   clear(): void;
@@ -86,10 +86,18 @@ export function createTable(name:string):ObservableMap<string, any> {
     // TODO set and update should be the same function
     set:(key, value) => {
       const res =  table.set(key, value);
+      // console.log('set:key',key)
       table$.next({ key, value });
       return  res;
     },
     update:(key, state) => {
+      if(ArrayBuffer.isView(state) || Array.isArray(state)){
+        const oldState = table.get(key);
+        const value = state;
+        const res =  table.set(key, value);
+        table$.next({ key, value });
+        return  res;
+      }
       const oldState = table.get(key);
       const value = { ...oldState, ...state };
       const res =  table.set(key, value);
@@ -220,7 +228,7 @@ function createSytstem(
  // reactive
   if (onUpdateGroup) {
     if (componentGroup) {
-      info(`${name}: el. ${componentGroup.toString()} reactive stream onUpdateGroup will start`, 'yellow');
+      info(`${name}: el. ${componentGroup.toString()} reactive stream onUpdateGroup will start`, 'blue');
     // table.subject
 
       const getComponentTable$ = (groups:string[]) => {
@@ -240,21 +248,38 @@ function createSytstem(
         },                   []);
       };
       const elements = [];
+      const bufferFlush = new Subject()
       combineLatest(
       ...getComponentTable$(componentGroup),
       // TODO: chack why a.key is not correct
-      (...components:any[]):any => ({
-        uid:components[0].key,
-        element:GLOBAL_ELEMENTS_TABLE.get(components[0].key),
-        value:components.reduce((obj,component,i)=>
-        ({...obj,[componentGroup[i]]:component.value}),{}),
-      }))
+      (...components:any[]):any => (
+        // uid:components[0].key,
+        // element:GLOBAL_ELEMENTS_TABLE.get(components[0].key),
+        components.reduce((obj,component,i)=>
+        ({
+          value:{
+          ...obj.value,
+          [componentGroup[i]]:component.value,
+          },
+          element: GLOBAL_ELEMENTS_TABLE.get(component.key),
+          uid: component.key,
+        }),{})
+      ))
       .pipe(
         filter(groupEl => groupEl.element),
-        bufferTime(1000 / 30),
-        // bufferCount(3000),
+        // buffer based on count
+        // tap(v=>console.log('before distinct:',v)),
+        // distinctUntilKeyChanged('uid'),
+        distinct(groupEl => { return groupEl.uid},bufferFlush),
+        // tap(v=>console.log('after distinct:',v)),
+        // bufferCount(10),
+        // tap(v=> bufferFlush.next()),
+        // tap(v=>console.log('after distinct:',v)),
+        // buffer based on render tick
+        bufferTime(1000 / 60),
         filter(val => val.length > 0),
         scan((buffers:any[], values:any[], index:number):any => {
+         
           buffers[0] = values.map(group => group.value);
           buffers[1] = values.map(group => group.element);
           return buffers;
@@ -262,6 +287,8 @@ function createSytstem(
       )
 
       .subscribe(([values, elements]) => {
+        bufferFlush.next()
+        // console.log('onUpdateGroup',elements)
         onUpdateGroup(context, values, camera, elements);
       });
     }
@@ -278,6 +305,7 @@ function createSytstem(
     console.error(`TASK: elemnt ${uid} could not complete task`, error);
   }
   function setPool(elements) {
+    
     state.POINTERS_TO_ELEMENTS.table = elements;
   }
   function start(element) { // register
@@ -306,7 +334,7 @@ function createSytstem(
     // reactive
     if (onUpdate) {
       if (componentGroup) {
-        info(`${name}: el. ${element.uid} reactive stream onUpdate will start`, 'blue');
+        info(`${name}: el. ${element.uid} reactive stream onUpdate will start`, 'yellow');
         // table.subject
 
         const getComponentTable$ = (groups:string[]) => {
@@ -321,10 +349,36 @@ function createSytstem(
 
         combineLatest(
           ...getComponentTable$(componentGroup),
-          (a:any, b:any):any => ({ ...b.value, ...a.value }))
+          // TODO: chack why a.key is not correct
+          (...components:any[]):any => 
+            components.reduce((obj,component,i)=>
+            ({...obj,[componentGroup[i]]:component.value}),{}),
+        )
         .subscribe(value => {
-          onUpdate(context, value, camera, element);
+            const component = onUpdate(context, value, camera, element);
+            
+            // TODO: USE RETURN value to update tables from selected groupedComponents
+            // bug if update current input / if REACTIVE 
+            Object.keys(component).forEach((componentName)=>{
+              // debugger
+              // console.log(componentName,'component:update',element.uid, component[componentName])
+              getTable(componentName).update(element.uid, component[componentName])
+            });
+            // console.log('component:',componentGroup,component)
         });
+
+       
+    
+
+
+        
+
+        // combineLatest(
+        //   ...getComponentTable$(componentGroup),
+        //   (a:any, b:any):any => ({ ...b.value, ...a.value }))
+        // .subscribe(value => {
+        //   onUpdate(context, value, camera, element);
+        // });
         return element;
       }
 

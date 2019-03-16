@@ -27,7 +27,7 @@
  */
 // export = SDFTextContent;
 export default create;
-declare function create(camera:any,props:any):SDFTextContent;
+declare function create(props:any):SDFTextContent;
 /*~ Write your module's methods and properties in this class */
 // declare class SDFTextContent {
 //     constructor(someParam?: string);

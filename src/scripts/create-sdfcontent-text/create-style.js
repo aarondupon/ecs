@@ -114,7 +114,7 @@ function parseHtmlStyle(newStyle){
     align: 'left',
     wordWrapWidth: newStyle.width || false ,
     fontURL: '/public/fonts/din/DIN-Regular.fnt',
-    imageURL: '/public/fonts/din/DIN-Regular.png?&id='+Math.random(),
+    imageURL: '/public/fonts/din/DIN-Regular.png',//?&id='+Math.random(),
     };
 
     const htmlStyle = {...defaultStyle,...newStyle}

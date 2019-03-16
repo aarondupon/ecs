@@ -17,7 +17,7 @@ declare interface IElement{
 
 declare interface IComponent{
   uid?:string;
-  translate3d:{position:vec3,localPositionany:vec3,globalPosition:vec3};
+  translate3d:{position:vec3, localPositionany:vec3, globalPosition:vec3};
   // position:vec3;
   // localPosition:vec3;
   // globalPosition?:vec3;
@@ -25,14 +25,14 @@ declare interface IComponent{
   localRotation:vec3;
   globalRotation?:vec3;
 }
-export const getComponentGroup = () =>(['translate3d','rotate3d']);
+export const getComponentGroup = () => (['translate3d']); // ,'rotate3d']);
 
-export const onUpdateGroup = (gl:any, components:IComponent[], camera:any, elements:IElement[]) => {
-  // console.log('components',components[0])
-  components.forEach((component,i) => {
+export const onUpdateGroup1 = (gl:any, components:IComponent[], camera:any, elements:IElement[]) => {
+  // console.log('components',components)
+  components.forEach((component, i) => {
     const element = elements[i];
- 
-    const {globalPosition = [0,0,0],position = [0,0,0]} = component.translate3d;
+
+    const { globalPosition = [0, 0, 0], position = [0, 0, 0] } = component.translate3d;
 
     const parent = undefined; // element.parent ? LIBRARY.get(element.parent.uid) : undefined
     const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
@@ -41,39 +41,49 @@ export const onUpdateGroup = (gl:any, components:IComponent[], camera:any, eleme
     const model = mat4.clone(element.model);
     mat4.identity(model);
 
-    const [vpX,vpY,vpWidth,vpHeight] = camera.viewport;
+    const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;
     // console.log(component.globalPosition,component.globalRotation)
     vec3.add(globalPosition, parentGlobalPosition, localPosition);
     // normalize pixel space;
-    vec3.divide(globalPosition,globalPosition,[vpWidth,-vpHeight,1])
-    mat4.translate(model, model,globalPosition );
+    vec3.divide(globalPosition, globalPosition, [vpWidth, -vpHeight, 1]);
+    // console.log('translate',globalPosition);
+    mat4.translate(model, model, globalPosition);
+
+    // console.log('translate',i,model);
     element.model = model;
   });
-}
+};
 // reactive
-export const onUpdate2 = (gl:any, component:IComponent, camera:any, element:IElement) => {
+export const onUpdate = (gl:any, component:IComponent, camera:any, element:IElement) => {
   // console.log('update')
   const { uid } = element;
-  const { globalPosition, position} = component.translate3d;
+  if (component) {
 
-  const parent = undefined; // element.parent ? LIBRARY.get(element.parent.uid) : undefined
-  const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
-  const localPosition = position;
+    const { globalPosition, position } = component.translate3d;
 
-  const model = mat4.clone(element.model);
-  mat4.identity(model);
+    const parent = undefined; // element.parent ? LIBRARY.get(element.parent.uid) : undefined
+    const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
+    const localPosition = position;
 
-  const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;
+    const model = mat4.clone(element.model);
+    mat4.identity(model);
 
-  vec3.add(globalPosition, parentGlobalPosition, localPosition);
+    const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;
+
+    vec3.add(globalPosition, parentGlobalPosition, localPosition);
   // normalize pixel space;
-  vec3.divide(globalPosition, globalPosition, [vpWidth, -vpHeight, 1]);
-  mat4.translate(model, model, globalPosition);
+    vec3.divide(globalPosition, globalPosition, [vpWidth, -vpHeight, 1]);
+    mat4.translate(model, model, globalPosition);
+    // console.log('udpate', element.uid, model);
+    // element.model = model;
 
-  element.model = model;
 
+  //  getTable('fontLoader').set(element.uid,{ texture:tex })
+    return {model};
   // console.log('model::::',component,component.position,component.localPosition)
   // console.log('update model system')
-  return { globalPosition, position };
+    // return { translate3d:{ globalPosition, position } };
+  // return { globalPosition, position };
+  }
 
 };

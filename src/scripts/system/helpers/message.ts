@@ -8,7 +8,7 @@ export const info = (message,color='green') =>{
             skin = ['#eaf9fe','#1bc1f5']
         break;
         case 'yellow':
-        skin = ['#FAFAD2','#ffff00']
+        skin = ['#FFFFE0','#666600']
         break;
         default:
             break;

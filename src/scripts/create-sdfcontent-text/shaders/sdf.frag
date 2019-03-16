@@ -66,5 +66,5 @@ void main(void)
 //  float distanceFactor = 5.;
 //         float sigDist = distanceFactor*(median(sample.r, sample.g, sample.b) - 0.5);
        
-//      gl_FragColor = vec4(vec3(0.,1.,0.), sigDist);
+    //  gl_FragColor = vec4(vec3(0.,1.,0.), 1.0);
 }

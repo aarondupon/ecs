@@ -11,9 +11,7 @@ import * as loadImage from 'img';
 import createIndices from 'quad-indices';
 import { Subject, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-// import vert from './shaders/sdf.vert';
-import vert from './shaders/sdfText.vert';
-// import sdfTextVert from './shaders/sdfText.vert';
+import vert from './shaders/sdf.vert';
 import frag from './shaders/sdf.frag';
 import createStyle from './create-style';
 import createLayout from './create-layout';
@@ -29,7 +27,6 @@ var createTexture = require("gl-texture2d");
 
 
 import geometryComponent  from '../components/ecs/geometryComponent';
-import modelComponent  from '../components/ecs/modelComponent';
 
 // var baboon        = require("baboon-image")
 
@@ -219,7 +216,6 @@ const createTextObject =(buffers,baseObj,width) => {
     */
     
     let comp =  createESCElement(
-        modelComponent(),
         fontLoaderBehavior({
             font: '/public/fonts/din/DIN-Regular.fnt',
             image: '/public/fonts/din/DIN-Regular.png',
@@ -244,7 +240,7 @@ const createTextObject =(buffers,baseObj,width) => {
         //     buffers,
         //     shaders:[
         //         {
-        //         vert:sdfTextVert,
+        //         vert,
         //         frag,
         //         uniforms: {
         //             uSampler:'texture',// = renderer.bindTexture(texture);
@@ -258,9 +254,9 @@ const createTextObject =(buffers,baseObj,width) => {
         translate3dBehavior({
             position:[window.innerWidth/2,window.innerHeight/2,0],
         }),
-        // rotate3dBehavior({
-        //     rotation:[0,0,0],
-        // }),
+        rotate3dBehavior({
+            rotation:[0,0,0],
+        }),
         // scale3dBehavior({
         //     scale:[1,1,1]
         // }),
@@ -425,7 +421,7 @@ export default function createSDFContentText(props){
 
     const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
     // const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
-    const txt =  `${renderCount}:${Date.now()}`;// + 'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
+    const txt =  `${renderCount}:${Date.now()}`;//'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
 
     const baseObj = createESCElement(
         rotate3dBehavior({

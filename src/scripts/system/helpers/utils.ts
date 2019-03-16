@@ -14,5 +14,11 @@ export const getBehaviorName  = (path) => {
   return path.match(/([^\/]+)(?=Behavior\.\w+$)/)[0];
 };
 
+export const getComponentName  = (path) => {
+  return path.match(/([^\/]+)(?=Component\.\w+$)/)[0];
+};
+
 export const getSystemName = (filename) =>
 `ESC${jsUcfirst(filename.replace('./', '').replace('.ts', '')).replace('Behavior', 'System')}`;
+
+
