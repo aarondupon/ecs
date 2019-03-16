@@ -1,7 +1,10 @@
 // var wrap = require('word-wrapper-improved');
 // var wordWrap = require('word-wrapper')
-var xtend = require('xtend')
-var number = require('as-number')
+import moize from 'moize';
+import xtend from 'xtend';
+import number from 'as-number';
+// var xtend = require('xtend')
+// var number = require('as-number')
 
 var X_HEIGHTS = ['x', 'e', 'a', 'o', 'n', 's', 'r', 'c', 'u', 'm', 'v', 'w', 'z']
 var M_WIDTHS = ['m', 'w']
@@ -394,7 +397,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
         spaceLeft -= (wordBox.width + (check ? space: 0))
       }
     }
-    console.log('JSON - TEXTBOX',JSON.stringify(lines,null,' '))
+    // console.log('JSON - TEXTBOX',JSON.stringify(lines,null,' '))
     return lines;
   }).reduce((arr,lines)=>[arr,...lines]) // Combinatie van array-elementen door LF
 }

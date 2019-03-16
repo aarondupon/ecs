@@ -21,16 +21,19 @@ declare interface IComponent{
   // position:vec3;
   // localPosition:vec3;
   // globalPosition?:vec3;
-  rotation:vec3;
-  localRotation:vec3;
-  globalRotation?:vec3;
+  // rotation:vec3;
+  // localRotation:vec3;
+  // globalRotation?:vec3;
+  model:mat4;
 }
-export const getComponentGroup = () => (['translate3d']); // ,'rotate3d']);
+export const getComponentGroup = () => (['translate3d','model']); // ,'rotate3d']);
 
-export const onUpdateGroup1 = (gl:any, components:IComponent[], camera:any, elements:IElement[]) => {
-  // console.log('components',components)
+const modelRef =  getTable('model');
+export const onUpdateGroup = (gl:any, components:IComponent[], camera:any, elements:IElement[]) => {
+ 
   components.forEach((component, i) => {
     const element = elements[i];
+    const { uid } = element;
 
     const { globalPosition = [0, 0, 0], position = [0, 0, 0] } = component.translate3d;
 
@@ -38,7 +41,8 @@ export const onUpdateGroup1 = (gl:any, components:IComponent[], camera:any, elem
     const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
     const localPosition = position;
 
-    const model = mat4.clone(element.model);
+    // const model = mat4.clone(element.model);
+    const model =  component.model;//getTable('model').get(uid);//mat4.clone(element.model);
     mat4.identity(model);
 
     const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;
@@ -50,11 +54,11 @@ export const onUpdateGroup1 = (gl:any, components:IComponent[], camera:any, elem
     mat4.translate(model, model, globalPosition);
 
     // console.log('translate',i,model);
-    element.model = model;
+    modelRef.set(uid,model)
   });
 };
 // reactive
-export const onUpdate = (gl:any, component:IComponent, camera:any, element:IElement) => {
+export const onUpdate1= (gl:any, component:IComponent, camera:any, element:IElement) => {
   // console.log('update')
   const { uid } = element;
   if (component) {
@@ -65,7 +69,7 @@ export const onUpdate = (gl:any, component:IComponent, camera:any, element:IElem
     const parentGlobalPosition = parent ? parent.globalPosition : [0, 0, 0];
     const localPosition = position;
 
-    const model = mat4.clone(element.model);
+    const model =  getTable('model').get(uid);//mat4.clone(element.model);
     mat4.identity(model);
 
     const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;

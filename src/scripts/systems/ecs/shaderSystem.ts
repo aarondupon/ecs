@@ -3,8 +3,10 @@ import { getComponent, getTable } from '../../system/helpers/system';
 import * as mat4 from 'gl-mat4';
 import { IGeomComponent } from '../../components/ecs/geometryComponent';
 import glShader from 'gl-shader';
+import loadImages from '../../../lib/loader';
 const glBuffer =  require('gl-buffer');
 const glVao = require('gl-vao');
+import glTexture2d from 'gl-texture2d';
 declare interface IDrawData{
 
 }
@@ -22,7 +24,8 @@ declare interface IComponent{
   fontLoader:any;
 }
 
-export const getComponentGroup = () => (['geometry', 'fontLoader']);
+// export const getComponentGroup = () => (['geometry', 'fontLoader']);
+export const getComponentGroup = () => (['geometry']);
 
 // export const getComponentGroup = () => ([]);
 
@@ -34,6 +37,7 @@ export const onUpdateGroup = (
 
   components.forEach((component, i) => {
     const element = elements[i];
+    // console.log('elements:',elements.length)
     const { geometry, fontLoader } = component;
     const geom = createGeometry(geometry, element.uid, gl);
     const geomsRef = getTable('geom');
@@ -57,15 +61,57 @@ const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingCo
 
     // create all shaders from vertex en fragemnt
     
-    const geoms = shaders.map(({ vert, frag }) => {
-      const shader = glShader(gl, vert, frag);
-      const { attributes } = shader;
+    const geoms = shaders.map(({ vert, frag , uniforms}) => {
+      
+      
+      const compiledShader = glShader(gl, vert, frag);
+      const { attributes, types } = compiledShader;
+
+      Object.keys(types.uniforms).forEach(key => {
+        if(types.uniforms[key] === "sampler2D"){
+          
+         loadImages([uniforms[key].texture]).subscribe((images) => {
+            const tex = glTexture2d(gl, images[0]);
+            // var v = gl.getParameter(gl.ACTIVE_TEXTURE);
+            // setup smooth scaling
+            tex.bind();
+            tex.generateMipmap();
+            tex.minFilter = gl.LINEAR_MIPMAP_LINEAR;
+            tex.magFilter = gl.LINEAR;
+            // and repeat wrapping
+            tex.wrap = gl.REPEAT;
+            // minimize distortion on hard angles
+            const ext = gl.getExtension('EXT_texture_filter_anisotropic');
+            if (ext) {
+              const maxAnistrophy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+              tex.bind();
+              gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(16, maxAnistrophy));
+            }
+
+            compiledShader.uniforms[key] = tex.bind(0);
+            compiledShader.bind();
+            
+            // shader.uniforms.uSampler =  texture.bind(0);
+            // getTable('fontLoader').set(element.uid, { texture:tex });
+            // complete({ texture:tex });
+          });
+          
+        }
+        
+      });
+
+      
       const _attributes = [];
 
+      
       // per shader
       Object.keys(attributes).forEach((key, i) => {
         // set location (pointer) of attribute
         attributes[key].location = i;
+        // if(key === 'instanceId'){
+        //   const n = buffers.position.buffer.length/buffers.position.size;
+        //   buffers[key] = Array(n).fill(0);
+        // }
         // read data from vao (array of vertex aray objects)
         if (!buffers[key]) {
           console.error(`BUFFER ERROR ${uid}, key:${key}, is not in buffers object. Element will not be drawn by draw2d behavior.`, buffers);
@@ -103,7 +149,7 @@ const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingCo
       // }
       return {
         length:buffers.index.buffer.length,
-        shader,
+        shader:compiledShader,
         vao,
       };
     });

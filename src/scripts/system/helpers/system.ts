@@ -194,6 +194,18 @@ export function getComponentNames(uid:string) {
   return list;
 }
 
+const GLOBAL_ELEMENTS_TABLE =
+    getTable('GLOBAL_ELEMENTS_TABLE') || createTable('GLOBAL_ELEMENTS_TABLE');
+export function getBehaviorNames(uid:string) {
+  let behaviors = []
+  if (GLOBAL_ELEMENTS_TABLE) {
+      const element = GLOBAL_ELEMENTS_TABLE.get(uid);
+      if (element) {
+        behaviors = element.behaviors
+      }
+  }
+  return behaviors
+}
 export function getComponentValue(name:string, prop:string):() => {} {
   return () => SYSTEM_TABLES.get(name)[prop];
 }
@@ -205,6 +217,8 @@ export function getTaskTable(name:string):ObservableMap<string, any> {
   return SYSTEM_TABLES.get(`${name}.task`);
 }
 
+
+    
 function createSytstem(
     context,
     camera,
@@ -222,8 +236,8 @@ function createSytstem(
   const getComponentGroup = getComponentGroupTables(componentGroup);
 
   const fpsController = new FpsController();
-  const GLOBAL_ELEMENTS_TABLE =
-    getTable('GLOBAL_ELEMENTS_TABLE') || createTable('GLOBAL_ELEMENTS_TABLE');
+  // const GLOBAL_ELEMENTS_TABLE =
+  //   getTable('GLOBAL_ELEMENTS_TABLE') || createTable('GLOBAL_ELEMENTS_TABLE');
 
  // reactive
   if (onUpdateGroup) {
@@ -233,6 +247,7 @@ function createSytstem(
 
       const getComponentTable$ = (groups:string[]) => {
         return groups.reduce((tables, componentName, idx) => {
+          
           const table = getTable(componentName);
           if(!table){
             throw `table error: ${componentName} component does not exist.
@@ -266,7 +281,7 @@ function createSytstem(
         }),{})
       ))
       .pipe(
-        filter(groupEl => groupEl.element),
+        // filter(groupEl => groupEl.element),
         // buffer based on count
         // tap(v=>console.log('before distinct:',v)),
         // distinctUntilKeyChanged('uid'),
@@ -276,8 +291,10 @@ function createSytstem(
         // tap(v=> bufferFlush.next()),
         // tap(v=>console.log('after distinct:',v)),
         // buffer based on render tick
-        bufferTime(1000 / 60),
-        filter(val => val.length > 0),
+        bufferTime((1000 / 60)),
+        tap(()=>bufferFlush.next()),
+        // filter(val => val.length > 0),
+       
         scan((buffers:any[], values:any[], index:number):any => {
          
           buffers[0] = values.map(group => group.value);
@@ -287,9 +304,10 @@ function createSytstem(
       )
 
       .subscribe(([values, elements]) => {
-        bufferFlush.next()
-        // console.log('onUpdateGroup',elements)
-        onUpdateGroup(context, values, camera, elements);
+        
+        
+        // console.log('onUpdateGroup',values,elements)
+        values.length > 0 && onUpdateGroup(context, values, camera, elements);
       });
     }
   }

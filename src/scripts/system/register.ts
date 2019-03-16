@@ -1,5 +1,5 @@
 
-import { default as createSytstem, createTable, getTable, System, getComponentNames } from './helpers/system';
+import { default as createSytstem, createTable, getTable, System, getComponentNames, getBehaviorNames } from './helpers/system';
 import { jsUcfirst, getBehaviorName, getSystemName ,getComponentName} from './helpers/utils';
 
 import config from './config';
@@ -98,6 +98,9 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
         return /Behavior$/.test(key);
       });
 
+      // extra check, because behavior is somtimes undefined ????!!!!
+      if(!behaviorFuntionName) return;
+
     // creates behavior rule (checks if element has behavior short name)
     // example name is drawBehavior.js  --> short name is draw
     // iterates over behavior of current element array property
@@ -116,7 +119,7 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
         behaviorName: (behaviorFuntionName || '').replace('Behavior', ''),
 
       };
-
+      
       ECS_BEHAVIORS.push(behavior);
       const name = getSystemName(filename);
       if (!window[name]) {
@@ -161,7 +164,9 @@ function loadBehaviors(ECS_RENDER_SYSTEMS) {
           const element = queue.shift();
           let pointer = element.uid;
           const components = getComponentNames(element.uid);
-          addToSystem(element,components, pointer, origKeys, ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS);
+          const behaviors = element.behaviors;//getBehaviorNames(element.uid);
+          
+          addToSystem(element,components, behaviors, pointer, origKeys, ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS);
           // pointer ++;
 
         }
@@ -297,7 +302,8 @@ function loadComponents(ECS_RENDER_SYSTEMS) {
           const element = queue.shift();
           let pointer = element.uid;
           const components = getComponentNames(element.uid);
-          addToSystem(element, components, pointer, origKeys, ECS_SYSTEMS, ECS_COMPONENTS, COMPONENT_NAMES, ECS_COMPONENTS);
+          const behaviors = getBehaviorNames(element.uid);
+          addToSystem(element, components, behaviors, pointer, origKeys, ECS_SYSTEMS, ECS_COMPONENTS, COMPONENT_NAMES, ECS_COMPONENTS);
           // pointer ++;
 
         }
@@ -486,8 +492,9 @@ function removeFromSystems(uid:string, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAV
 }
 
 const register = (element:IElement, target= 'main') => {
-  element.behaviors = getComponentNames(element.uid);
+  // element.behaviors = getBehaviorNames(element.uid);
   const components = getComponentNames(element.uid);
+  const behaviors = element.behaviors;//getBehaviorNames(element.uid)
   // console.log('elements.components:',element.components )
     // add to sytem
   const pointer = element.uid;//elements.size;
@@ -499,7 +506,8 @@ const register = (element:IElement, target= 'main') => {
   if (ready) {
     if (ECS_RENDER_SYSTEM) {
       const { ECS_SYSTEMS, ECS_BEHAVIORS, ECS_COMPONENTS } = ECS_RENDER_SYSTEM;
-      addToSystem(element, components, pointer, BEHAVIOR_NAMES, ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS);
+      
+      addToSystem(element, components,behaviors, pointer, BEHAVIOR_NAMES, ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS);
     }
 
   } else { // add to queue
@@ -533,15 +541,15 @@ export function unregister(uid:string, behaviorNames:string[], target:string= 'm
 /**
  *  MAIN FUNTCTION ADD TO SYSTEM INITATION
  * @param element
- * @param pointer
+ * @param uid
  * @param behaviorNames
  */
-function addToSystem(element:IElement, components:string[], pointer, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS) {
+function addToSystem(element:IElement, components:string[], behaviors:string[], uid, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAVIORS, COMPONENT_NAMES, ECS_COMPONENTS) {
   let behaviorExist = false;
-
+  // debugger
   // TODO Separate (TEMP HACK)
   // TEMP HACK !! not performant
-  ECS_SYSTEMS.forEach((system:System, index:string) => {
+  ECS_SYSTEMS.forEach((system:System) => {
     if (system.componentGroup && element && components) {//element.behaviors) {
       let include = false;
       system.componentGroup.forEach(component => {
@@ -550,21 +558,29 @@ function addToSystem(element:IElement, components:string[], pointer, behaviorNam
       });
 
       if (include) {
+        console.log('element.behaviors',element.behaviors)
+       // unregister(uid);
+       
+        system.add(uid);
+        system.start(element)
         
-        ECS_SYSTEMS[index].add(pointer);
-
-        ECS_SYSTEMS[index].start(element);
+        // ECS_SYSTEMS[index].add(uid);
+        // ECS_SYSTEMS[index].start(element);
       }
 
     }
 
   });
-
+  // return false
   ECS_BEHAVIORS.forEach((behavior, index) => {
+    if( !behaviors.includes(behavior.behaviorName)) {
+      
+      return false;
+    }
     // TODO: remove old way
     if (behavior.rule && behavior.rule(element) && !behavior.behaviorName) {
 
-      ECS_SYSTEMS[index].add(pointer);
+      ECS_SYSTEMS[index].add(uid);
       behaviorExist = true;
     }
 
@@ -576,7 +592,7 @@ function addToSystem(element:IElement, components:string[], pointer, behaviorNam
 
   });
 
-  if (!behaviorExist && element.behaviors) {
+  if (!behaviorExist && element.behaviors ) {
     console.error(`register.js: behavior ${name}  does not exist
     please create a ${name}Behavior.js file in .scripts/behaviors/ecs
     or select one of ${behaviorNames}`);

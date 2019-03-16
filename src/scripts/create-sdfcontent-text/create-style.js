@@ -1,6 +1,8 @@
 
 import TextStyle from './text-style';
 import isnumber from 'lodash.isnumber';
+import moize from 'moize';
+
 var lineHeight = require('line-height');
 
 
@@ -146,7 +148,7 @@ function getStyle(styles = {},style = {} ){
     return {...styles,default:defaultStyle};
 }
 
-export default function createStyle(styles,style) {
+function createStyle(styles,style) {
     const parsedStyle = getStyle({...styles},{...style})
     let newStyle = {}
 
@@ -164,3 +166,5 @@ export default function createStyle(styles,style) {
     })
     return newStyle;
 }
+
+export default moize.deep(createStyle)

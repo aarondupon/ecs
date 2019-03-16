@@ -15,7 +15,7 @@ varying float vSize;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 models[10];
+uniform mat4 models[100];
 
 uniform mat3 translationMatrix;
 uniform mat3 projectionMatrix;

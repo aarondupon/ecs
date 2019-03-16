@@ -1,5 +1,5 @@
 import behavior from '../../system/helpers/behavior';
-import { getComponent } from '../../system/helpers/system';
+import { getComponent, getTable } from '../../system/helpers/system';
 import * as mat4 from 'gl-mat4';
 
 declare interface IDrawData{
@@ -18,30 +18,28 @@ declare interface IComponent{
   uid:string;
   // geometry:any[];
   geom:any[];
-  fontLoader:any;
+  // fontLoader:any;
   model:mat4;
 }
 declare interface IData{
   uid:string;
 }
-function test2(data:IData) {
-  // debugger
-  return data;
-}
-export const test2Behavior = behavior(test2);
 
-const geomsRef = getComponent('geom');
-const fontLoaderRef = getComponent('fontLoader');
+
+const geomsRef = getTable('geom');
+// const fontLoaderRef = getTable('fontLoader');
 
 // export const getComponentGroup = () => (['translate3d', 'geom', 'fontLoader']);
 
 // export const getComponentGroup = () => ([]);
-export const getComponentGroup = () => (['geom','fontLoader','translate3d','model']);
+// export const getComponentGroup = () => (['geom','fontLoader','model']);
+export const getComponentGroup = () => (['model']);
 
 const width  = window.innerWidth;
 const height = window.innerHeight;
 
 export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[], camera:any, elements:IElement[]) => {
+  
   camera.viewport = [0, 0, width, height];
     // camera.update();
     // set WebGL viewport to device size
@@ -50,19 +48,23 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
   gl.enable(gl.CULL_FACE);
   gl.clearColor(0, 0.1, 0.1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // eslint-disable-line no-bitwise
+  // return;
   // console.log('components',components)
 
 
-  
+
 
   components.forEach((component, i) => {
     const element = elements[i];
-    const { model, geom, fontLoader } = component;
+    // const { model, geom, fontLoader } = component;
 
     const { uid } = element;
-    // const geoms = geomsRef(uid).data;
-    // const fontLoader = fontLoaderRef(uid).data;
-
+    const { model } = component;
+    const geom = geomsRef.get(uid)
+    // const fontLoader = fontLoaderRef.get(uid);
+    // console.log('geom',geom)
+    // if(!geom || !fontLoader) return;
+    if(!geom) return;
     // console.log('renderSystem',component.model)
 
     // const model = mat4.clone(element.model);
@@ -75,26 +77,21 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
     mat4.scale(model, model, [1, -1 * aspect, 1]);
     // console.log('model',model)
     
-    if (fontLoader && fontLoader.texture && model && geom && geom.length > 0) {
+    // if (fontLoader && fontLoader.texture && model && geom && geom.length > 0) {
        
-      const { texture } = fontLoader;
+    //   const { texture } = fontLoader;
+    if ( model && geom && geom.length > 0) {
 
       geom.forEach((geom, index:number) => {
       
         const { shader, vao, length } = geom;
 
-       
       
-          shader.uniforms.projection = camera.projection;
-          shader.uniforms.view = camera.view;
-          shader.uniforms.model = model;
-        if (!shader.binded) {
-          shader.uniforms.uSampler =  texture.bind(0);
-          shader.bind();
-          shader.binded = true;
-        }
-       
-
+        shader.uniforms.projection = camera.projection;
+        shader.uniforms.view = camera.view;
+        shader.uniforms.model = model;
+          
+      
         vao.bind();
 
           // gl.drawElements(gl.LINES, 16, gl.UNSIGNED_SHORT, index_buffer);

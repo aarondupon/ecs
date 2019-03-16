@@ -11,8 +11,9 @@ import * as loadImage from 'img';
 import createIndices from 'quad-indices';
 import { Subject, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-// import vert from './shaders/sdf.vert';
-import vert from './shaders/sdfText.vert';
+import vert from './shaders/sdf.vert';
+// import vert from './shaders/sdfText.vert';
+// import sdfTextVert from './shaders/sdfText.vert';
 import frag from './shaders/sdf.frag';
 import createStyle from './create-style';
 import createLayout from './create-layout';
@@ -27,13 +28,10 @@ const stringify = require("json-stringify-pretty-compact");
 var createTexture = require("gl-texture2d");
 
 
-
-import geometryComponent  from '../components/ecs/geometryComponent';
-import fontComponent  from '../components/ecs/fontComponent';
+// import geometryComponent  from '../components/ecs/geometryComponent';
+import geometryBatchComponent  from '../components/ecs/geometryBatchComponent';
 import modelComponent  from '../components/ecs/modelComponent';
-import translate3dComponent  from '../components/ecs/translate3dComponent';
-import { _system_Behavior } from '../behaviors/ecs/_system_Behavior';
-
+// import batchComponent  from '../components/ecs/batchComponent';
 
 // var baboon        = require("baboon-image")
 
@@ -124,6 +122,7 @@ function loadAssets(style, cb) {
       });
 
 }
+
 const createNullObject = (gl) => {
     const shader = createShader(gl, vert, frag);
 
@@ -204,7 +203,9 @@ const createSquare = (rect= [1.,1.]) => {
 let i = 0;
 const createTextObject =(buffers,baseObj,width) => {
     i++;
-
+    const model = mat4.create();
+    const position = [100,100, 0];
+    const scale = [1, 1];
     
  
     /*
@@ -231,19 +232,19 @@ const createTextObject =(buffers,baseObj,width) => {
     
     let comp =  createESCElement(
         modelComponent(),
-        // fontLoaderBehavior({
-        //     font: '/public/fonts/din/DIN-Regular.fnt',
-        //     image: '/public/fonts/din/DIN-Regular.png',
-        //     }),
-        geometryComponent({
+        // batchComponent(),
+        fontLoaderBehavior({
+            font: '/public/fonts/din/DIN-Regular.fnt',
+            image: '/public/fonts/din/DIN-Regular.png',
+            }),
+        geometryBatchComponent({
             buffers,
             shaders:[
                 {
                 vert,
                 frag,
                 uniforms: {
-                    // uSampler:'texture',// = renderer.bindTexture(texture);
-                    uSampler: {texture:'/public/fonts/din/DIN-Regular.png'},
+                    uSampler:'texture',// = renderer.bindTexture(texture);
                     uAlpha:1,
                     uColor:0xff00ff,
                     uFontSize:1,//sdfText.style.fontSize;
@@ -256,7 +257,7 @@ const createTextObject =(buffers,baseObj,width) => {
         //     buffers,
         //     shaders:[
         //         {
-        //         vert,
+        //         vert:sdfTextVert,
         //         frag,
         //         uniforms: {
         //             uSampler:'texture',// = renderer.bindTexture(texture);
@@ -267,13 +268,9 @@ const createTextObject =(buffers,baseObj,width) => {
         //             // u_weight:sdfText.style.weight;
         //             }
         //         }]}),
-        
-        translate3dComponent({
+        translate3dBehavior({
             position:[window.innerWidth/2,window.innerHeight/2,0],
-        })
-        // translate3dBehavior({
-        //     position:[window.innerWidth/2,window.innerHeight/2,0],
-        // }),
+        }),
         // rotate3dBehavior({
         //     rotation:[0,0,0],
         // }),
@@ -302,7 +299,7 @@ const createTextObject =(buffers,baseObj,width) => {
     
   };
 
-  const createVertexArrayObject = (style, text, font,index = 1 ,start = 0, buffersMerged) => {
+  const createVertexArrayObject = (style, text, font,index = 1 ,start = 0) => {
         const flatCopyStyle = {};
         Object.keys(style).forEach(key => {
             flatCopyStyle[key] = style[key].getFlatCopy();
@@ -345,7 +342,7 @@ const createTextObject =(buffers,baseObj,width) => {
        
         const sizes = vertices.sizes(opt, stylesIndexs);
         const offset = [index*10*font.info.size,index*10*font.info.size];
-     console.log('offset',offset)
+     
         // get common vertex data
         const positions = vertices.positions(glyphs, sizes, font.info.size,offset);
 
@@ -399,25 +396,17 @@ const createTextObject =(buffers,baseObj,width) => {
         // console.log(uvs)
 
         //vertexArrayObject with buffers
-
-        const buffers = {
-                "index":{buffer:indices},
-                // "position2D":{buffer:positions,type:'FLOAT',size:2,stride:2*4,offset:0},
-                // update! keep it simple
-                "size":{buffer:sizes,type:'FLOAT',size:1,stride:1*4,offset:0},
-                "coord":{buffer:uvs,type:'FLOAT',size:2,stride:2*4,offset:0},
-                "position":{buffer:positionsXYZ,type:'FLOAT',size:2,stride:2*4,offset:0},
-                "color":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
-            } 
+       const buffers = {
+            "index":{buffer:indices},
+            // "position2D":{buffer:positions,type:'FLOAT',size:2,stride:2*4,offset:0},
+            // update! keep it simple
+            "size":{buffer:sizes,type:'FLOAT',size:1,stride:1*4,offset:0},
+            "coord":{buffer:uvs,type:'FLOAT',size:2,stride:2*4,offset:0},
+            "position":{buffer:positionsXYZ,type:'FLOAT',size:2,stride:2*4,offset:0},
+            "color":{buffer:colors,type:'FLOAT',size:3,stride: 3*4,offset:0},
+        } 
+     
         return buffers
-
-        // buffersMerged.index.buffer.push(...indices);
-        // buffersMerged.size.buffer.push(...sizes);
-        // buffersMerged.coord.buffer.push(...uvs);
-        // buffersMerged.position.buffer.push(...positionsXYZ);
-        // buffersMerged.color.buffer.push(...colors);
-        // return buffersMerged;
-       s
     };
 
 let renderCount = 1;
@@ -433,9 +422,8 @@ const buffersMerged = {
     "color":{buffer:[],type:'FLOAT',size:3,stride: 3*4,offset:0},
 } 
 
-   
-
-function createSDFContentTextOld(props){
+    
+export default function createSDFContentText(props){
     const { width=200, uid=null} = props;
     renderCount++
     let dirty = 0;
@@ -444,10 +432,13 @@ function createSDFContentTextOld(props){
     if(!uid){
         console.log(`createSDFContentText with text-component${renderCount} is created`)
     }
- 
+    
+
+   
+
     const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
     // const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
-    const txt =  `${renderCount}:${Date.now()}`;
+    const txt =  `${renderCount}:${Date.now()}`;// + 'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
 
     const baseObj = createESCElement(
         rotate3dBehavior({
@@ -455,90 +446,35 @@ function createSDFContentTextOld(props){
         }),
     )({
         uid: uid || 'text-component'+renderCount,
-        ...props,
-    });
-
-    const assets = loadAssets(styles, (font) => {
-        loadCount ++
-        const vao = createVertexArrayObject(styles,txt,font)
-        const text = createTextObject(vao,baseObj,props.width);
-        if(text.registered){
-            console.log('registration.register',text)
-            registerElement(text) 
-        }
-
-    });
-    return baseObj;
-
-};
-
-// function batchRender(fn){
-//     return (props)=>{
-//         const batchGroupId = 0;
-//         fn({...props,uid:batchGroupId,instanceId: `text-component-${props.uid}`});
-//     }
-    
-// }
-// export default batchRender(createSDFContentText)
-
-export default function createSDFContentText(props){
-    const { width=200, uid=null, batchGroupId = 0} = props;
-    renderCount++
-    let dirty = 0;
-    let indexDirty = 0;
-
-    if(!uid){
-        console.log(`createSDFContentText for batchgroup ${batchGroupId} with uid text-component${renderCount}`)
-    }
-    
-
-   
-
-    const styles = createStyle(myStyles)//, { width: 200, breakWords: true });
-    // const txt =  'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
-    const txt =  `${renderCount}:${Date.now()}`;//'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
-
-    const baseObj = createESCElement(
-        // _system_Behavior()
-    )({
-        uid: batchGroupId,
-        instanceId: uid || 'text-component'+renderCount,
         // uid: uid || 'text-component',
-        // model: mat4.create(), // our model-space transformations  
+        model: mat4.create(), // our model-space transformations  
     });
     // registerElement(node)
-    // const baseObj = {
-    //     uid: batchGroupId,
-    //     instanceId: uid || 'text-component'+renderCount,
-    // }
+
     const assets = loadAssets(styles, (font) => {
         loadCount ++
         
         
        
-        // const vao = createVertexArrayObject(styles,txt,font)
-        // const text = createTextObject(vao,baseObj,props.width);
+        const vao = createVertexArrayObject(styles,txt,font)
+        const text = createTextObject(vao,baseObj,props.width);
 
 
-        const vao = createVertexArrayObject(styles,txt,font,loadCount,start,buffersMerged) ;
-        start = vao.index.buffer.length/4;//30*loadCount || 0;
-    
+        // const vao = createVertexArrayObject(styles,txt,font,loadCount,start) ;
+        // start = vao.index.buffer.length/4;//30*loadCount || 0;
         // console.log('buffersMerged.index.buffer.length',vao.index.buffer.length/3,loadCount,start)
-        buffersMerged.index.buffer.push(...vao.index.buffer);
-        buffersMerged.size.buffer.push(...vao.size.buffer);
-        buffersMerged.coord.buffer.push(...vao.coord.buffer);
-        buffersMerged.position.buffer.push(...vao.position.buffer);
-        buffersMerged.color.buffer.push(...vao.color.buffer);
-
-        console.log('vao', buffersMerged.index.buffer.length,loadCount)
+        // buffersMerged.index.buffer.push(...vao.index.buffer);
+        // buffersMerged.size.buffer.push(...vao.size.buffer);
+        // buffersMerged.coord.buffer.push(...vao.coord.buffer);
+        // buffersMerged.position.buffer.push(...vao.position.buffer);
+        // buffersMerged.color.buffer.push(...vao.color.buffer);
         // console.log('buffersMerged:', buffersMerged.coord);
-        const text = createTextObject(buffersMerged,baseObj,props.width);
-        
+        // const text = createTextObject(buffersMerged,baseObj,props.width);
         
         
        
         if(text.registered){
-            // console.log('registration.register',text)
+            console.log('registration.register',text)
             registerElement(text) 
         }
         // console.log(stringify(text,{maxLength: 1, indent: 1}))

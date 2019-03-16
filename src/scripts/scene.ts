@@ -1,6 +1,7 @@
 import createSphere from './create-sphere';
 import createTorus from './create-torus';
-import createSdfcontentText from './create-sdfcontent-text';
+// import createSdfcontentText from './create-sdfcontent-text';
+import  createSdfcontentText from './create-sdfcontent-text/create-sdfcontent-text-batch';
 import * as createTexture from 'gl-texture2d';
 import { default as hex } from 'hex2rgb';
 import { getComponent, getTable, getTaskTable, getComponentList, getComponentNames } from './system/helpers/system';
@@ -50,11 +51,11 @@ const light = {
   ambient: hex2rgb('#373c3d'),
 };
 
-const GENARTOR:any =  raf(60);
+const GENARTOR:any =  raf(30);
 const GENARTOR2:any =  raf(1);
 
 const translate3dTable = getTable('translate3d'); // TODO CHEck if exist
-const rotate3dTable = getTable('rotate3d'); // TODO CHEck if exist
+// const rotate3dTable = getTable('rotate3d'); // TODO CHEck if exist
 
 // const pos = {left:0}
 // if(pos) TweenMax.to(pos, 2, {left:1000, repeat:-1, yoyo:true,onUpdate:(v)=>{
@@ -82,12 +83,13 @@ GENARTOR.subscribe(time => {
 // }
   let idx = 0;
   translate3dTable.forEach((component, key, map) => {
-    const position = [(10 * idx) + (window.innerWidth * Math.sin(time * .01 * idx)), 50 * idx, 0];
+    idx = ((idx)  %  (map.size))+1;
+    const position = [(10 * (idx)) + (window.innerWidth * Math.sin(time * .01 * idx)), 50 * idx, 0];
     // console.log(key,position[1])
     translate3dTable.update(key, {
       position,
     });
-    idx = (idx + 1)  %  (map.size);
+    
   });
 
   // translate3dTable.update('text-component', { position : [(window.innerWidth * Math.sin(time*.1)), 10, 0] });
@@ -115,19 +117,22 @@ const i = 0;
 
 // })
 
+
+
 export default function scene(gl, images) {
   // the 3D objects for our scene
   // const text  = createSdfcontentText(gl, { width:150, style:{} });
 
-  for (let i = 0; i < 10; i++) {
-    const text  = createSdfcontentText({ width:350, style:{} });
-    const registration =  registerElement(text);
-    // setTimeout(()=>{
-    //   const text  = createSdfcontentText({ width:350, style:{} });
-    //   const registration =  registerElement(text);
-    // },i*5)
+  // for (let i = 0; i < 10; i++) {
+  //   const text  = createSdfcontentText({ width:350, style:{} , batcGroupId:'text-group-1'});
+  //   const registration =  registerElement(text);
+  // }
 
+  let text;
+  for (let i = 0; i < 100; i++) {
+     text  = createSdfcontentText({ width:350, style:{} , batchGroupId:'text-group-1'});
   }
+  const registration =  registerElement(text);
 
     // setTimeout(()=>{
     //   const text  = createSdfcontentText({ width:350, style:{} });

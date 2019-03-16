@@ -19,7 +19,7 @@ declare interface IElement{
 
 declare interface IComponent{
   uid:string;
-  geometry:IGeomComponent;
+  geometryBatch:IGeomComponent;
   fontLoader:any;
   model:mat4;
 }
@@ -29,8 +29,8 @@ declare interface IData{
 
 const cach:any = {}
 
-export const getComponentGroup = () => ([]);
-// export const getComponentGroup = () => (['geometry','fontLoader','translate3d','model']);
+// export const getComponentGroup = () => ([]);
+export const getComponentGroup = () => (['geometryBatch','fontLoader','translate3d','model']);
 
 const width  = window.innerWidth;
 const height = window.innerHeight;
@@ -72,7 +72,7 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
   components.forEach((component, i) => {
     const element = elements[i];
     uids.push(element.uid)
-    const { geometry, fontLoader } = component;
+    const { geometryBatch:geometry, fontLoader } = component;
     const { buffers, shaders }  = geometry;
 
         // console.log('buffersMerged.index.buffer.length',buffers.index.buffer.length/3,i,start)
@@ -172,7 +172,7 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
 
   }
 
-  const geom = cach.createGeomData || (cach.createGeomData = createGeom({ shaders:components[0].geometry.shaders, buffers:buffersMerged }));
+  const geom = cach.createGeomData || (cach.createGeomData = createGeom({ shaders:components[0].geometryBatch.shaders, buffers:buffersMerged }));
     // console.log('geomgeomgeom:',geom)
 
   const model = mat4.clone(elements[elements.length - 1].model);
@@ -197,7 +197,7 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
 
   });
 
-  if (fontLoader && fontLoader.texture && shader && length && models.length > 9) {
+  if (fontLoader && fontLoader.texture && shader && length && models.length > 1) {
 
       // console.log('models::',models.length)
 

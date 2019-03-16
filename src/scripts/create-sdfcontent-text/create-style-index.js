@@ -1,5 +1,7 @@
 import isundefined from 'lodash.isundefined';
 import omitBy from 'lodash.omitby';
+import moize from 'moize';
+
 
 
 
@@ -23,7 +25,7 @@ function getStyleBytagName(tagName,isClosingTag,styles){
     return {style: {...defaultStyle, ...style},name:tagName,isClosingTag}
 }
 
-export default function createStyleIndex(opt){
+function createStyleIndex(opt){
     const {text} = opt
     // const res = (/<[^>]*>/g).match(text);
     var myRe = /<[^>]*>/g;
@@ -50,3 +52,5 @@ export default function createStyleIndex(opt){
     }
     return new Style(styles);  
 }
+
+export default moize.deep(createStyleIndex)

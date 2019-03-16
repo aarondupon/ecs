@@ -1,4 +1,5 @@
 import { getTable, createTable } from './system';
+import uniq from 'lodash.uniq'
 
 declare interface IElement{
   uid: string;
@@ -23,14 +24,14 @@ const createBehavior = (behavior?:(behaviorData:any) => any) => {
       // TODO: needs to be removed not needed!
       const comp =  {
         ...element,
-        behaviors: [...(element.behaviors || []), behaviorName],
+        behaviors: uniq([...(element.behaviors || []), behaviorName]),
       };
 
       return comp;
     }
     const comp =  {
       ...element,
-      behaviors: [...(element.behaviors || []), behaviorName],
+      behaviors: uniq([...(element.behaviors || []), behaviorName]),
     };
 
     return comp;
