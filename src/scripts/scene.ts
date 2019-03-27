@@ -29,8 +29,8 @@ function raf(step = 1000) {
   const date = Date.now()
   return timer(0, 1000 / step).pipe(
       // map(x=>Date.now()),
-      // pairwise(),
-      // map(([a,b]) => a-b)
+      // // pairwise(),
+      // // map(([a,b]) => a-b),
 
       // scan((total) => total + 1, date),
       );
@@ -51,7 +51,7 @@ const light = {
   ambient: hex2rgb('#373c3d'),
 };
 
-const GENARTOR:any =  raf(30);
+const GENARTOR:any =  raf(1);
 const GENARTOR2:any =  raf(1);
 
 const translate3dTable = getTable('translate3d'); // TODO CHEck if exist
@@ -84,8 +84,10 @@ GENARTOR.subscribe(time => {
   let idx = 0;
   translate3dTable.forEach((component, key, map) => {
     idx = ((idx)  %  (map.size))+1;
-    const position = [(10 * (idx)) + (window.innerWidth * Math.sin(time * .01 * idx)), 50 * idx, 0];
-    // console.log(key,position[1])
+    // const position = [0,0+Math.random(),0];
+    // const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .01 * idx)))/10, 50 * idx, 0];
+    const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .00001 * idx)))/10, 0, 0];
+    // console.log('translate3dTable',key,position,idx)
     translate3dTable.update(key, {
       position,
     });
@@ -123,15 +125,19 @@ export default function scene(gl, images) {
   // the 3D objects for our scene
   // const text  = createSdfcontentText(gl, { width:150, style:{} });
 
-  // for (let i = 0; i < 10; i++) {
-  //   const text  = createSdfcontentText({ width:350, style:{} , batcGroupId:'text-group-1'});
+  // for (let i = 0; i < 100; i++) {
+  //   const text  = createSdfcontentText({ uid:i, width:350, style:{} , batchGroupId:'text-group-1'});
   //   const registration =  registerElement(text);
   // }
+  
 
   let text;
-  for (let i = 0; i < 100; i++) {
-     text  = createSdfcontentText({ width:350, style:{} , batchGroupId:'text-group-1'});
-  }
+  // for (let i = 0; i <= 10.922; i++) {
+  //    text  = createSdfcontentText({ width:350, style:{} , batchGroupId:'text-group-1'});
+  // }
+  for (let i = 0; i <= 1; i++) {
+    text  = createSdfcontentText({ width:350, style:{} , batchGroupId:'text-group-1'});
+ }
   const registration =  registerElement(text);
 
     // setTimeout(()=>{

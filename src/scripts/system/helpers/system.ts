@@ -281,7 +281,7 @@ function createSytstem(
         }),{})
       ))
       .pipe(
-        // filter(groupEl => groupEl.element),
+        filter(groupEl => groupEl.element),
         // buffer based on count
         // tap(v=>console.log('before distinct:',v)),
         // distinctUntilKeyChanged('uid'),

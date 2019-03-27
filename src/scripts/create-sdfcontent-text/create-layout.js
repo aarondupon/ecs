@@ -23,6 +23,8 @@ var ALIGN_LEFT = 0,
 var newline = /\n/
 var whitespace = /\s/
 
+const resolution = 2
+
 export default function createLayout(opt, charStyles) {
   return new TextLayout(opt,charStyles)
 }
@@ -35,19 +37,29 @@ function isHypen(chr) {
 }
 
 function TextLayout(opt, charStyles) {
+  
   const newOptions = {...opt}
+  // console.log('newOptions._text = newOptions.text', newOptions.text)
   const noTagsText = newOptions.text.replace(/<[^>]*>/g,'');
+  newOptions._text = newOptions.text
   newOptions.text = noTagsText
+  
+  
   this.glyphs = []
   this.charStyles = charStyles
   this._measureOld = this.computeMetrics.bind(this)
   this.hypens = []
 
-  this._measure = (string,measureSpace,style)=>this.computeMetrics(string, 0, string.length, newOptions.width+string.length, measureSpace, style)
+  this._measure = (string,measureSpace,style,message)=>this.computeMetrics(string, 0, string.length, newOptions.width, measureSpace, style,message)
+  // this._computeMetrics(string,start,end, newOptions.width, measureSpace, style,message)
+
   this.update(newOptions)
 }
 TextLayout.prototype.getCharStyles = function getCharStyles(charIdx){
   const {charStyles} = this;
+  // console.log('TextLayout.prototype.getCharStyles',charIdx,charStyles.styleAtIdx(charIdx).style.fontSize);
+  // if(charStyles.styleAtIdx(charIdx).style.fontSize === 60) debugger
+  
   return charStyles.styleAtIdx(charIdx);
 }
 TextLayout.prototype.update = function(opt) {
@@ -55,9 +67,11 @@ TextLayout.prototype.update = function(opt) {
   opt = xtend({
     measure: this._measure,
     measureOld:this._measureOld,
-    breakWord: false,
+    breakWord: true,
     // mode:'pre',
   }, opt)
+
+  
   this._opt = opt
 
   this._opt.tabSize = number(this._opt.tabSize, 4)
@@ -66,11 +80,12 @@ TextLayout.prototype.update = function(opt) {
     throw new Error('must provide a valid bitmap font')
 
   var glyphs = this.glyphs
-  var text = opt.text;////.replace('</ml>','').replace('<ml>','')      || ''//.replace(/<\/?(ml)>/,'').replace(/<?(ml)>/,'') ||'' 
+  var text = opt.text//.replace(/\n/g,'%');////.replace('</ml>','').replace('<ml>','')      || ''//.replace(/<\/?(ml)>/,'').replace(/<?(ml)>/,'') ||'' 
 
   var font = opt.font
   this._setupSpaceGlyphs(font);
   var lines = this.wordwrap(text,opt);
+  
   var minWidth = opt.width || 0
 
 
@@ -86,14 +101,16 @@ TextLayout.prototype.update = function(opt) {
   var x = 0
   var y = 0
   var lineHeight = number(opt.lineHeight, font.common.lineHeight)
+
+
   var baseline = font.common.base
   var descender = lineHeight-baseline
   var letterSpacing = opt.letterSpacing || 0
-  var height = lineHeight * lines.length - descender
-  var align = getAlignType(this._opt.align)
+  var height = lineHeight * lines.length - descender;
+  var align = getAlignType(this._opt.align);
 
   //draw text along baseline
-  y -= height
+  // y -= lineHeight
   
   //the metrics for this text layout
   this._width = maxLineWidth
@@ -110,40 +127,88 @@ TextLayout.prototype.update = function(opt) {
   var charIdx = 0
   var charIdx2 = 0
   var lastY = 0;
+  var maxLineHeightBottom = 0;
+  var maxLineHeight = 0;
   // var hypensCountDirtyFIX =  0
-  
+  console.log('aaron:lines:::',lines)
+  var lastMaxFontSize = 0;
+  var lastmaxLineHeightBottom = 0;
   lines.forEach(function(line, lineIndex) {
+    
+    // console.log('aron:lines:::',line.text.length,line.text.replace(' ','+'))
    // if  hypens enabled text max lenght is not correct
     var start = line.start
-    var end = line.end 
-    var lineWidth = line.width
+    var end =  line.end;//start + line.text.length
+    var lineWidth = line.width;
     var lastGlyph
-
-    var maxLineHeight = 0;
+    
+   
     var maxFontSize = 0;
-    if(lineIndex > 0){
+   
+   
+    
+    if(lineIndex >= 0){
+     
+      maxLineHeightBottom = 0;
+      maxLineHeight = 0
+      
+      let n = 0;
+      // maxFontSize = 0;
       for (var i=start; i<end; i++) {
-        var id = text.charCodeAt(charIdx2)
+        var txt = line.text;
+        var id = txt.charCodeAt(n)
         var glyph = self.getGlyph(font, id)
-        var char = text.charAt(charIdx2)
+        var char = txt.charAt(n)
         var charStyle = self.getCharStyles(i);
         if(glyph){
           maxFontSize = Math.max(charStyle.style.fontSize,maxFontSize);
           const fontSize = charStyle.style.fontSize;
-          const fontScale = font.info.size/fontSize;
-          const lineHeight = Math.sqrt(fontSize)*Math.PI* 1.618*100 + charStyle.style.lineHeight;////(glyph.yoffset*fontSize) + charStyle.style.lineHeight ;
-          maxLineHeight = Math.max(lineHeight,maxLineHeight);
+          const fontScale = maxFontSize/font.info.size;
+          // const lineHeight = maxFontSize;//charStyle.style.lineHeight;//maxFontSize + charStyle.style.lineHeight/maxFontSize;//Math.sqrt(fontSize)*Math.PI* 1.618*100 + charStyle.style.lineHeight;////(glyph.yoffset*fontSize) + charStyle.style.lineHeight ;
+          // maxLineHeightBottom = (Math.max(lineHeight,maxLineHeightBottom)+charStyle.style.fontSize/maxFontSize) //+ Math.sqrt(fontSize)*Math.PI* 1.618*100;
+          const lineHeight = charStyle.style.lineHeight;// + maxFontSize/2;//maxFontSize + charStyle.style.lineHeight/maxFontSize;//Math.sqrt(fontSize)*Math.PI* 1.618*100 + charStyle.style.lineHeight;////(glyph.yoffset*fontSize) + charStyle.style.lineHeight ;
+          const lineHeightBottom = charStyle.style.lineHeightBottom || 0;
+          
+          maxLineHeightBottom = (Math.max(lineHeightBottom,maxLineHeightBottom))
+         
+          maxLineHeight = (Math.max(lineHeight,maxLineHeight))
+
+          
+
+         
+          
         }
+       
+        n++
         charIdx2 ++
       }
+
+      if(lineIndex === 0) y += maxLineHeightBottom
+
+      if(lineIndex === 0) maxLineHeight = maxLineHeight/2 + maxFontSize
+     
     }
-  
+
+    console.log('maxLineHeight',lineIndex,maxLineHeight)
+
+    let nn = 0
+
     for (var i=start; i<end; i++) {
-      
-      var id = text.charCodeAt(charIdx)
+      // if(lineIndex === 3 ) console.log('line: ',lineIndex,line.text,text.charAt(start+nn),line.text.slice(nn,nn+1),charIdx)
+
+      // var id = text.charCodeAt(charIdx)
+      // var glyph = self.getGlyph(font, id)
+      // var char = text.charAt(charIdx)
+
+      var char = line.text.slice(nn,nn+1)
+      var id = char.charCodeAt(0)
       var glyph = self.getGlyph(font, id)
-      var char = text.charAt(charIdx)
-      var charStyle = self.getCharStyles(i);
+
+      if(lineIndex === 3 ){
+        console.log('lineIndex',lineIndex,char,'>>',line.text.slice(nn,nn+1))
+      }
+
+      var charStyle = self.getCharStyles(charIdx);
           
       if(!charStyle){
          charStyle = self.getCharStyles(start) || self.getCharStyles(0); 
@@ -152,23 +217,55 @@ TextLayout.prototype.update = function(opt) {
       const {fontSize} = charStyle.style;
             
       let ty = 0;
+      // console.log('maxLineHeightBottom',maxLineHeightBottom)
       
       /* if(isWhitespace(char)){      
       } */
      
       if(/\uE000/g.test(char)){
+
+        
         const isLastChar = end-1 === i
         glyph = self.getGlyph(font, HYPEN_ID);
+        
+          if(charIdx !== end-1){
+            console.log('isLastChar::',charIdx === end-1)
+            glyph = {...self.getGlyph(font, HYPEN_ID)}
+            glyph.width = 0;
+          }
+          // glyph.width =0;
+        
+        console.log('isLastChar',isLastChar,charIdx,end-1)
         !isLastChar && (glyph.xadvance = 0);
       }
       if(glyph){
-        ty = y + maxLineHeight+   + (glyph.yoffset*fontSize) ;
-        ty += -baseline*fontSize; // align baseline 
+        if(/(\?|[1-4])/.test(glyph.char)
+        
+          ) {
+          // console.log('aaron:debug:',{lineIndex},charStyle.style.fontSize,text.slice(charIdx,charIdx+1),glyph.char)//,charIdx,text,text.slice(charIdx,charIdx+10),glyph.char,charStyle.style.fontSize)
+        }
+        // const fontSize = charStyle.style.fontSize;
+        // console.log('maxLindeHeight',maxLineHeightBottom,y,baseline,glyph.yoffset,fontSize,charStyle.style.fontSize)
+        // ty = y + maxLineHeightBottom + (-baseline + glyph.yoffset) * fontScale ;
+        // ty += -baseline*fontSize; // align baseline 
+
+
+        ty +=  y  +(maxLineHeight/2) - charStyle.style.fontSize ;// + (glyph.yoffset*charStyle.style.fontSize) ;
+        // ty -= (baseline - glyph.yoffset) * charStyle.style.fontSize/font.info.size ;
+        ty -= ( - glyph.yoffset) * charStyle.style.fontSize/font.info.size ;
+        
+        
+        // ty += -baseline*charStyle.style.fontSize; // align baseline 
+      //  ty += baseline*; // align baseline 
 
         if (lastGlyph) {
           x += getKerning(font, lastGlyph.id, glyph.id) 
-          x += glyph.xoffset//*fontSize
+          // x += glyph.xoffset//*fontSize
+         
+        }else{
+          
         }
+
         var tx = x
         if (align === ALIGN_CENTER) 
           tx += (maxLineWidth-lineWidth)/2
@@ -179,11 +276,17 @@ TextLayout.prototype.update = function(opt) {
           position: [tx, ty],
           data: glyph,
           index: charIdx,
-          lineHeight:maxLineHeight,
-          line: lineIndex
+          lineHeightBottom:maxLineHeightBottom,
+          line: lineIndex,
+  
         })  
-
-        x += (glyph.xadvance*fontSize + letterSpacing)
+        const fontSize = charStyle.style.fontSize;
+        const fontScale = fontSize/font.info.size;
+       
+        // x += ((glyph.xadvance * fontScale * 2 ) + letterSpacing)
+        // x += (glyph.xadvance*fontScale*2 + letterSpacing) ;//font.info.size;
+        // x += ((glyph.xadvance * fontScale * 2)  + letterSpacing) ;//font.info.size;
+        x += ((glyph.xadvance * fontScale)  + letterSpacing) ;//font.info.size;
         // puls to left if x is zero
         if( i ===  start && id === SPACE_ID){
           x = 0
@@ -192,12 +295,25 @@ TextLayout.prototype.update = function(opt) {
         //move pen forward
         lastGlyph = glyph
       }
+      nn ++
       charIdx +=1
+      
     }
+    console.log('LINE++++',lineIndex+1,y,`+${lastmaxLineHeightBottom+(lastMaxFontSize*2)}`,lastMaxFontSize,'maxFontSize',maxFontSize,'->',lastMaxFontSize,maxLineHeightBottom,maxFontSize/2,line.text)
     //next line down
-    y += maxLineHeight
+  
+    lastmaxLineHeightBottom = maxLineHeightBottom;
+
+    y +=  (maxLineHeight/2)+lastmaxLineHeightBottom//+(lastmaxLineHeightBottom/2);//(maxLineHeightBottom/2)+maxFontSize;//+Math.sqrt(maxFontSize)*1.618;//maxLineHeightBottom;//Math.sqrt(maxLineHeightBottom - maxFontSize) * Math.PI*1.618 *2
+    lastMaxFontSize = maxFontSize
+    console.log('maxLineHeightBottom',lastmaxLineHeightBottom)
+    console.log('yyy',maxFontSize,maxLineHeightBottom)
+    
+   
+    
     x = 0
   })
+  
   this._linesTotal = lines.length;
 }
 
@@ -253,39 +369,65 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
       width: 0
     }
   }
-
-  end = Math.min(text.length, end)
+  
   for (var i=start; i < end; i++) {
+    console.log('nextWidth:',start,end,text)
     var id = text.charCodeAt(i)
     var glyph = this.getGlyph(font, id)
-    var charStyle = style || this.getCharStyles(i);
-
+   
+  
+    var charStyle = this.getCharStyles(i);
+    // console.log('computeMetrics',text.charAt(i),charStyle.style.fontSize)
+    // if(text == '333?123' ) 
+      // console.log('text::'+text,'<--',text.charAt(i),i,charStyle.style.fontSize)
+    
     if(!charStyle){
        charStyle = this.getCharStyles(start) || this.getCharStyles(0); 
     }
 
     const {fontSize} = charStyle.style;
     
+    
     if (glyph) {
+      glyph.char = text.charAt(i);
+console.log('xoffset',glyph.char,glyph.xoffset)
+      // const charStyle = this.getCharStyles(i);// || this.getCharStyles(0); 
       //move pen forward
-      const fontScale = (fontSize/font.info.size);
 
+      // if(!style) debugger
+      const fontScale = (charStyle.style.fontSize/font.info.size);
+      
       var xoff = glyph.xoffset;
       var kern = lastGlyph ? getKerning(font, lastGlyph.id, glyph.id) : 0
-      curPen += kern * fontScale;
+      // curPen += kern;///fontScale;
+      curPen += (xoff-kern)*fontScale;
+    
+      // var nextPen = (curPen + glyph.xadvance + letterSpacing) * fontScale;
+      // var nextWidth = (curPen + glyph.width) * fontScale;
 
-      var nextPen = curPen + ((glyph.xadvance + letterSpacing) * fontScale);
-      var nextWidth = curPen + (( glyph.width) * fontScale);
+      // curPen -= kern * fontScale;
 
+      var nextPen = curPen + ((glyph.width + glyph.xadvance + letterSpacing) * fontScale);
+      var nextWidth = curPen + (( glyph.width + glyph.xadvance) * fontScale);
+      
+      
+     if(text.slice(start,end) == 'compu') console.log('nextWidth///',glyph.xadvance,fontScale,letterSpacing,text.slice(start,end),nextPen,nextWidth);
+
+      //  debugger
+      //  if(text === 'shows') 
+      //    console.log('nextWidth',glyph.char,nextWidth,style.style.fontSize/font.info.size)//,( glyph.width) * fontScale,nextWidth,'fontSize',fontSize,'---->',i,':',style.style.fontSize,'::::',charStyle.style.fontSize)
+     
       if(measureSpace && id === SPACE_ID){
         const spaceWidth = glyph.xadvance
+        
         nextWidth += (spaceWidth + glyph.xoffset)*fontScale;
       }
       if (nextWidth >= width || nextPen >= width){
       }
       //we've hit our limit; we can't move onto the next glyph
       if (nextWidth >= width || nextPen >= width){
-        break
+        // break stops if font is large
+        // break
       }
       //otherwise continue along our line
       curPen = nextPen
@@ -295,9 +437,13 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
     count++
   }
   //make sure rightmost edge lines up with rendered glyphs
-  if (lastGlyph)
-    curWidth += lastGlyph.xoffset
+  if (lastGlyph){
+    const fontSize = charStyle.style.fontSize;
+    const fontScale = (fontSize/font.info.size);
+    curWidth += lastGlyph.xoffset*fontScale;// + (lastGlyph.width*fontScale)
 
+  }
+  console.log('countcountcount',start,count)
   return {
     start: start,
     end: start + count,
@@ -314,44 +460,73 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
  * @return {[type]}        [description]
  */
 TextLayout.prototype.wordwrap = function(text,opt) {
-  const {width = 80, br = '\n',measure} = opt;
+  const {width = 80, br = '\n',measure,_text} = opt;
   const lines = [];
   let curPen = 0;
-
+  let totalPen = 0;
+  let currCharIdx = 0;
+  let currChunkIdx = 0;
+  // console.log('texttexttexttext',text,opt)
   // const noTagsText = text.replace(/<[^>]*>/g,'');
-  return text.split('\n').map((line,i) => {
-    const words = line.split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));;
-    const lineIdx = 0;
+  // let allLines =  [text.replace('\n','')].map((line,i) => {
+  let allLines =  _text.split(/(?=<br>|\n)/).map((line,i) => {
+      // const words = line.replace(/<[^>]*>/g,'').split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));
+      let words = line.replace('\n','').replace(/<[^>]*>/g,'').split(' ')//.filter(x=>(x !=='' && x !==' '));
+      // words =  words.map(x=>x.split('').join('\uE000'))
+
+      
+      console.log('wordswordswords',words)
+  // let allLines =  text.split('\n').map((line,i) => {
+  //   const words = (line).split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));
+    // const lineIdx = 0;
     let spaceLeft = width;
-    const letterSpacing =  opt.letterSpacing || 0;
-    const charCode = ' '.charCodeAt(0)
-    const char = ' '.charCodeAt(0)
+    // const letterSpacing =  opt.letterSpacing || 0;
+    // const charCode = ' '.charCodeAt(0)
+    // const char = ' '.charCodeAt(0)
     const glyph = this.getGlyph(opt.font, SPACE_ID)
     const spaceWidth = glyph.xadvance
-    const charIdx = lines.reduce((res,{total=0})=>res+total,0);
-    const charStyle = this.getCharStyles(charIdx);
-    const fontScale = (charStyle.style.fontSize/opt.font.info.size);
-    const space = fontScale*(spaceWidth + glyph.xoffset);
-
+    // const charIdx = lines.reduce((res,{total=0})=>res+total,0);
+   
+    // const charStyle = this.getCharStyles(charIdx);
+    // const fontScale = (charStyle.style.fontSize/opt.font.info.size);
+    // const space = fontScale*(spaceWidth + glyph.xoffset);
+    // console.log('fontScale-fontScale',charIdx,fontScale,charStyle.style.fontSize)
     function createLine(lines, width){
+      
       const line  = {
         id:lines.length+1,
         text:'',
-        start:  lines[lines.length - 1] ? (lines[lines.length - 1].end || 0) : 0,
+        start: lines[lines.length - 1] ? lines[lines.length - 1].end : 0 ,
+        // start:  lines[lines.length - 1] ? (lines[lines.length - 1].end || 0) : 0,
         width:width,
         total:0,
+        end:0,
+        addHypen:false,
+        // styles:[],
       };
+
+      // if(line.start == null) debugger
       lines.push(line);
       spaceLeft = width;
     }
      // creaet the first line
     createLine(lines,width)
     
-    function add(lines, text){
+    function add(lines, text,myCharStyle,isChunk = false){
+     
+       if(lines.length === 0){
+        createLine(lines,width)
+       }
+
+   
       const curLine =  lines[lines.length - 1];
-      curLine.text +=  text;
+     
+      curLine.text +=  text//.replace(' ','+');//  : text//.replace('\n);
       curLine.total = curLine.text.length;
+      // console.log('texttexttexttext:::',lines.length - 1,curLine.start,text.length)
       curLine.end =  curLine.start + curLine.text.length;
+      curLine.addHypen = isChunk;
+      // curLine.styles.push({text:text,style:myCharStyle.style.fontSize});
     }
        
     for (const origWord of words) {
@@ -359,47 +534,178 @@ TextLayout.prototype.wordwrap = function(text,opt) {
       let word = origWord;
       
       word = word.replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
-      curPen = lines[lines.length - 1].start+lines[lines.length - 1].text.length;
-      const charStyle = this.getCharStyles(curPen);     
-      const wordBox =  measure(word.replace(/(\u00AD)/g),true,charStyle);
+      const wordLength = origWord.replace(/(\u00AD|\uE000)/g,'+').length+1
+      curPen = lines.length >  0 ? lines[lines.length - 1].start+lines[lines.length - 1].text.length : 0;
+     
+      
+      console.log('currCharIdx(38)',currCharIdx,word,'===',text.slice(currCharIdx))
+     
+      const charStyle = this.getCharStyles(currCharIdx);     
+      // const wordBox =  measure(word.replace(/(\u00AD)/g),true,charStyle);
+      // const wordBox =  measure(word,true,this.getCharStyles(curPen));//measure(word.replace(/(\u00AD)/g,''),true,this.getCharStyles(curPen));
+      // console.log('fontScale-fontScale','curPen',curPen,'totalPen',totalPen,this.getCharStyles(curPen).style.fontSize,'   \t\t',word)//,lines[lines.length - 1].start,'curPen', curPen,'::::',this.getCharStyles(curPen).style.fontSize)
+      const wordBox = this.computeMetrics(text,totalPen,totalPen+wordLength,width,true);
+      console.log('wordBox::',wordBox.width,word,spaceLeft,'=',text.slice(totalPen,totalPen+wordLength))
+
+      // totalPen += wordLength; // plus one for space!!
+      
       // doesn't fit splt in chucks and try again please!
       if (wordBox.width > spaceLeft) { 
+        let chunkIdx = 0;
+        let chunkIdx__ = 0;
         const splitChunks = (chunks,startSpaceLeft,width,lines,deep) =>{
+          
           let spaceLeft = startSpaceLeft;
-          chunks[0] = ' '+chunks[0];
+          
+          // chunks[0] = ' '+chunks[0];
+         
           // lines[lines.length - 1].end += 1
           while(chunks.length > 0){
+            
             const chunk = chunks[0];
+            let origChunk = chunks[0];
+            const chunkLength = origChunk.replace(/(\u00AD|\uE000)/g,'+').length
+            // const chunkLength = chunk.replace(/\u00AD/g,'').length+1;
             // curPen += chunk.length
-            const charStyle = this.getCharStyles(curPen);
-            const chunkbox = measure(chunk+'-',true,charStyle);
+            console.log('chunkbox::',chunk,chunkLength)
+            const charIdx = curPen;
+            
+   
+            const charStyle = this.getCharStyles(totalPen+chunkIdx);
+            const fontScale = (charStyle.style.fontSize/opt.font.info.size);
+            const space = fontScale*(spaceWidth + glyph.xoffset);
+            // console.log('curPen::::',curPen,totalPen,chunk)
+            
+            console.log(`chunkbox::(${wordLength})`,window.devicePixelRatio,chunkIdx__,text.slice(totalPen+chunkIdx,totalPen+chunkIdx+chunkLength),'//////',text.slice(totalPen,totalPen+wordLength))//totalPen+chunkIdx,chunkLength,chunk,word,spaceLeft,'=',text.slice(totalPen+chunkIdx,totalPen+chunkIdx+chunkLength))
+            chunkIdx__ = chunkLength;
+    
+            const chunkbox = this.computeMetrics(text,totalPen+chunkIdx,totalPen+chunkIdx+chunkLength,width,true);
+            
+            // if(chunk == '­678?xxx') {
+              // const box = this.computeMetrics(text,currChunkIdx,currChunkIdx+chunk.length-1,width,true)
+              console.log('chunk_____',charStyle.style.fontSize,chunkbox.width,text.slice(totalPen+chunkIdx,totalPen+chunkIdx+chunkLength));//chunkbox.width,box.width,text.slice(currChunkIdx,currChunkIdx+chunk.length),'<-------',currChunkIdx,currChunkIdx+chunk.length,':::',width)
+            // }
+
+            // if(chunk !== String.fromCharCode(173)){
+            //   // const txt =  'the planet Hi I <b>am a com\uE000pu\uE000ter?</b> 123\uE0004ing over the world!';
+            //   // const txt =   'the planet Hi I am a computer 1234ing over the world!'
+            //   // console.log('currChunkIdx(38)',charStyle.style.fontSize,chunk.charCodeAt(0),chunk,'  <-->  ',text.slice(currChunkIdx,currChunkIdx+10)+'...')
+
+             
+            //   // currChunkIdx += chunk.length
+            // }
+            currChunkIdx += chunk.replace(/(\uE000)/g,'').length;
+
+
+         
+            // const wordBox =  measure(word.replace(/(\u00AD)/g),true,this.getCharStyles(curPen+1));
+            chunkIdx += chunk.length
             // create new line if chunk doesn't fit
-            if (chunkbox.width > spaceLeft) {
-               createLine(lines,width)
-               spaceLeft = width
+            // if (spaceLeft+chunkbox.width > spaceLeft) {  // don't allow overflow on the right side of the text box bounders
+            if (chunkbox.width > spaceLeft) {  // allow overflof on the right side of the text box bounders
+              // debugger 
+              createLine(lines,width)
+              spaceLeft = Math.max(0,width - (chunkbox.width - space))
+           
+             
+              const fontScale = (charStyle.style.fontSize/opt.font.info.size);
+              console.log('spaceLeft::::',chunk,chunks,chunks.length)//,chunkbox,spaceLeft,word,chunkbox.width)
+  
+              
+              add(lines,chunk + (chunks.length == 1 ? ' ' : '') ,charStyle)
+              
+
+              //  if((chunk.length-1 >  chunkbox.end) && opt.breakWords){
+              //   // createLine(lines,100)
+              //   spaceLeft = 0
+              //   add(lines,chunk.substring(0,chunkbox.end+1));
+              //   chunk =  chunk.substring(chunkbox.end+1,chunk.length)
+              //   createLine(lines,width)
+              //   add(lines,chunk.substring(0,chunkbox.end+1));
+              //    console.log('spaceLeft::::',chunk,chunkbox,spaceLeft,word,chunkbox.width)
+              //  }else{
+                 
+              //   add(lines,chunk)
+              //  }
+             
+              //  debugger
+              
+             
+              //  debugger
+             
+            }else{
+              spaceLeft -= chunkbox.width + space;
+              
+              add(lines,chunk,charStyle,true)
             }
-            add(lines,chunk)
-            spaceLeft -= chunkbox.width//+space;
+           
+           
+            // spaceLeft = Math.max(0,width - chunkbox.width)//+space;
+            // spaceLeft -= chunkbox.width//+space;
             // lines[lines.length - 1].end = 
             //   lines[lines.length - 1].start+lines[lines.length - 1].text.length;
 
             chunks.shift();
           }
+
+          
           // return remaining space width
+
+          
           return spaceLeft
         }
-        let chunks = (word.split(/(\u00AD)/g))
+           currCharIdx += word.length+1;
+
+
+        
+        
+        // if (wordBox.width > spaceLeft) {
+        //         createLine(lines,width)
+        //   }
+        let chunks = (word.split(/(?=\u00AD|\uE000)/g))
+        // let chunks = (word.split(/(\u00AD|\uE000)/g)).filter(x=>x !=='')
+        console.log('chunks:::::',chunks)
         spaceLeft = splitChunks(chunks,spaceLeft, width,lines)
+
+        
+
+        // debugger
       // fit's in textbox width
       } else{
-        const check = lines[lines.length - 1].text !== '' ? true: false
-        add(lines,check ? ' '+word: word)
-        spaceLeft -= (wordBox.width + (check ? space: 0))
+
+        // createLine(lines,100)
+       
+        // const check = lines[lines.length - 1].text !== '' ? true: false
+        // add(lines,check ? ' '+word: '' +word);
+        // add(lines,' '+word);
+        // add(lines, word+' ');
+       
+
+        // const charStyle2 = this.getCharStyles(curPen);
+        const charStyle = this.getCharStyles(currChunkIdx);
+        add(lines, word+' ',charStyle);
+        // const charIdx = lines.reduce((res,{total=0})=>res+total,0);
+        // const charStyle = this.getCharStyles(charIdx);
+        const fontScale2 = (charStyle.style.fontSize/opt.font.info.size);
+        const space = fontScale2*(spaceWidth + glyph.xoffset);
+        // console.log('fontScale-fontScale',curPen, this.getCharStyles(curPen))
+        spaceLeft -= wordBox.width + space
+
+        currCharIdx += word.length;
+        currChunkIdx = currCharIdx;
+        // spaceLeft -= (wordBox.width + (check ? space: 0))
       }
+      totalPen += wordLength; // plus one for space!!
+
+
+      
     }
-    // console.log('JSON - TEXTBOX',JSON.stringify(lines,null,' '))
+    console.log('JSON - TEXTBOX',JSON.stringify(lines,null,' '))
+    
     return lines;
-  }).reduce((arr,lines)=>[arr,...lines]) // Combinatie van array-elementen door LF
+  })//.reduce((arr,lines)=>[...arr,...lines]) // Combinatie van array-elementen door LF
+  console.log('aaron:allLinesallLinesallLines',allLines[0]);
+  return allLines[0]
 }
 
 //getters for the private vars

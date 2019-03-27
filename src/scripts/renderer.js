@@ -65,8 +65,13 @@ export default function renderer(images) {
 
   window.app = app;
 
+  // window.addEventListener('resize',()=>{
+    
+  // })
+
   return app;
 
+ 
 
   function render(dt) {
     // our screen-space viewport

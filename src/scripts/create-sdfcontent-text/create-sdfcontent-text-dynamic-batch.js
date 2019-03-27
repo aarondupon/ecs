@@ -424,7 +424,7 @@ const buffersMerged = {
 
     
 export default function createSDFContentText(props){
-    const { width=200, uid=null} = props;
+    const { width=100, uid=null} = props;
     renderCount++
     let dirty = 0;
     let indexDirty = 0;

@@ -43,13 +43,14 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
   camera.viewport = [0, 0, width, height];
     // camera.update();
     // set WebGL viewport to device size
-  gl.viewport(0, 0, width * 2, height * 2);
+  // gl.viewport(0, 0, width * 2, height * 2);
+  gl.viewport(0, 0, width * window.devicePixelRatio, height * window.devicePixelRatio);
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
   gl.clearColor(0, 0.1, 0.1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // eslint-disable-line no-bitwise
   // return;
-  // console.log('components',components)
+  // console.log('components',components);
 
 
 
@@ -72,9 +73,12 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
     const aspect = vpWidth / vpHeight;
 
     // set coordinate space to X-as = left Html , Y-as = top html
-    const center = [-1, 1, 0];
+    // const center = [-1, 1, 0];
+    const center = [0, 1, 0];
     mat4.translate(model, model, center);
-    mat4.scale(model, model, [1, -1 * aspect, 1]);
+  
+    // mat4.scale(model, model, [1, -1 * aspect, 1]);
+    mat4.scale(model, model, [1, -1 , 1]);
     // console.log('model',model)
     
     // if (fontLoader && fontLoader.texture && model && geom && geom.length > 0) {
@@ -90,6 +94,7 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
         shader.uniforms.projection = camera.projection;
         shader.uniforms.view = camera.view;
         shader.uniforms.model = model;
+
           
       
         vao.bind();
@@ -103,7 +108,7 @@ export const onUpdateGroup = (gl:WebGLRenderingContext, components:IComponent[],
         // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
         vao.draw(gl.TRIANGLES, length);
-        gl.enable(gl.CULL_FACE);
+        // gl.enable(gl.CULL_FACE);
         vao.unbind();
         
       });

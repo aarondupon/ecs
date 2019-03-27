@@ -18,6 +18,7 @@ declare interface IElement{
   behaviors:string[];
   components:string[];
   target:string;
+  registered:boolean;
 }
 
 let ready = false;
@@ -492,6 +493,9 @@ function removeFromSystems(uid:string, behaviorNames= [], ECS_SYSTEMS, ECS_BEHAV
 }
 
 const register = (element:IElement, target= 'main') => {
+   if (!element.registered) {
+        return;
+    }
   // element.behaviors = getBehaviorNames(element.uid);
   const components = getComponentNames(element.uid);
   const behaviors = element.behaviors;//getBehaviorNames(element.uid)

@@ -26,11 +26,12 @@ declare interface IComponent{
   // globalRotation?:vec3;
   model:mat4;
 }
-export const getComponentGroup = () => (['translate3d','model']); // ,'rotate3d']);
+export const getComponentGroup = () => (['translate3d']); // ,'rotate3d']);
 
 const modelRef =  getTable('model');
 export const onUpdateGroup = (gl:any, components:IComponent[], camera:any, elements:IElement[]) => {
  
+// console.log('modelSystem',components)
   components.forEach((component, i) => {
     const element = elements[i];
     const { uid } = element;
@@ -42,10 +43,11 @@ export const onUpdateGroup = (gl:any, components:IComponent[], camera:any, eleme
     const localPosition = position;
 
     // const model = mat4.clone(element.model);
-    const model =  component.model;//getTable('model').get(uid);//mat4.clone(element.model);
+    const model =  getTable('model').get(uid);//component.model;//getTable('model').get(uid);//mat4.clone(element.model);
     mat4.identity(model);
 
     const [vpX, vpY, vpWidth, vpHeight] = camera.viewport;
+   
     // console.log(component.globalPosition,component.globalRotation)
     vec3.add(globalPosition, parentGlobalPosition, localPosition);
     // normalize pixel space;

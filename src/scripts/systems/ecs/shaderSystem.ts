@@ -3,10 +3,12 @@ import { getComponent, getTable } from '../../system/helpers/system';
 import * as mat4 from 'gl-mat4';
 import { IGeomComponent } from '../../components/ecs/geometryComponent';
 import glShader from 'gl-shader';
-import loadImages from '../../../lib/loader';
+import { default as loadImages } from '../../../lib/loader';
 const glBuffer =  require('gl-buffer');
 const glVao = require('gl-vao');
 import glTexture2d from 'gl-texture2d';
+
+
 declare interface IDrawData{
 
 }
@@ -29,7 +31,6 @@ export const getComponentGroup = () => (['geometry']);
 
 // export const getComponentGroup = () => ([]);
 
-
 export const onUpdateGroup = (
   gl:WebGLRenderingContext, components:IComponent[],
   camera:any, elements:IElement[]) => {
@@ -37,21 +38,24 @@ export const onUpdateGroup = (
 
   components.forEach((component, i) => {
     const element = elements[i];
+ 
     // console.log('elements:',elements.length)
     const { geometry, fontLoader } = component;
     const geom = createGeometry(geometry, element.uid, gl);
     const geomsRef = getTable('geom');
-    geomsRef.set(element.uid,geom)
-  //  debugger
-    
-  });
 
+    // console.log('createGeometry :components',element.uid,geom);
+    geomsRef.set(element.uid, geom);
+  //  debugger
+
+  });
+ 
 };
 
-
-
 const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingContext) => {
-
+  const imageData = new ImageData(1, 1);
+  const DUMMY_TEXTURE = glTexture2d(gl,imageData);
+  
   function createGeom(data) {
 
     const { buffers, shaders } = data;
@@ -60,21 +64,27 @@ const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingCo
     if (!ext) { throw new Error('derivatives not supported'); }
 
     // create all shaders from vertex en fragemnt
-    
-    const geoms = shaders.map(({ vert, frag , uniforms}) => {
-      
-      
+
+    const geoms = shaders.map(({ vert, frag , uniforms }) => {
+
       const compiledShader = glShader(gl, vert, frag);
+     
       const { attributes, types } = compiledShader;
 
       Object.keys(types.uniforms).forEach(key => {
-        if(types.uniforms[key] === "sampler2D"){
+        if (types.uniforms[key] === 'sampler2D') {
           
-         loadImages([uniforms[key].texture]).subscribe((images) => {
+          const tex = DUMMY_TEXTURE;
+          // tex.bind()
+          // compiledShader.uniforms[key] = tex.bind(0);
+          compiledShader.bind();
+
+          loadImages([uniforms[key].texture]).subscribe((images) => {
+            
             const tex = glTexture2d(gl, images[0]);
             // var v = gl.getParameter(gl.ACTIVE_TEXTURE);
             // setup smooth scaling
-            tex.bind();
+            // tex.bind();
             tex.generateMipmap();
             tex.minFilter = gl.LINEAR_MIPMAP_LINEAR;
             tex.magFilter = gl.LINEAR;
@@ -84,26 +94,26 @@ const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingCo
             const ext = gl.getExtension('EXT_texture_filter_anisotropic');
             if (ext) {
               const maxAnistrophy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-              tex.bind();
+              // tex.bind();
               gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(16, maxAnistrophy));
             }
-
-            compiledShader.uniforms[key] = tex.bind(0);
-            compiledShader.bind();
+         
             
-            // shader.uniforms.uSampler =  texture.bind(0);
-            // getTable('fontLoader').set(element.uid, { texture:tex });
-            // complete({ texture:tex });
-          });
+            compiledShader.uniforms[key] = tex.bind(0);
+           
           
+
+            // console.log(`compiledShader(${uid}).uniforms[${key}] = tex.bind(0)`,compiledShader.uniforms[key] ,tex.bind(0))
+           
+
+          });
+
         }
-        
+
       });
 
-      
       const _attributes = [];
 
-      
       // per shader
       Object.keys(attributes).forEach((key, i) => {
         // set location (pointer) of attribute
@@ -139,32 +149,41 @@ const createGeometry = (geomData:IGeomComponent, uid:string, gl:WebGLRenderingCo
       // const length = buffers.index
       //   ? buffers.index.buffer.lengt
       //   : buffers.position.buffer.length / (buffers.position.stride/buffers.position.size);
+      
+      
+        // https://stackoverflow.com/questions/4998278/is-there-a-limit-of-vertices-in-webgl
+      // 65.535 is max index, so 65535 / 6 = 10922.
+      // if (capacity > 10922)
+      // throw new Error("Can't have more than 10922 quads per batch: " + capacity
 
-      const length = buffers.position.buffer.length / (buffers.position.stride / buffers.position.size);
-      console.log(
-        'lengthlengthlength',
-        (buffers.index.buffer.length / 3), length, 3 * 42, buffers.index.buffer.length);
+      // const length = buffers.position.buffer.length / (buffers.position.stride / buffers.position.size);
+      const length = buffers.index.buffer.length;
+      const quads = length / (3*2);
+      console.log('gl.MAX_VERTEX_UNIFORM_VECTORS',10922,65536,'<-:::->',quads,length);
+
+
+      // console.log(
+      //   'lengthlengthlength',
+      //   (buffers.index.buffer.length / 3), length, 3 * 42, buffers.index.buffer.length);
       // if (length !== 552) {
       //   console.error(`vao.draw:error: ${length} !== 552,   ${buffers.index.buffer.length}`);
       // }
       return {
-        length:buffers.index.buffer.length,
+        length:length,//buffers.index.buffer.length,
         shader:compiledShader,
         vao,
       };
     });
 
-    
     return geoms;
   }
-  
+
   const geom = createGeom(geomData);
   return geom;
     // const geomsRef = getTable('geom');
     // geomsRef.set(uid,geom)
     // complete(geom);
 };
-
 
 export const task = (drawData:any, uid:string, complete, gl) => {
   // enable derivatives for face normals

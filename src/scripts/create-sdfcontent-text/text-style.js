@@ -5,19 +5,21 @@ const getValue = (value) => (typeof value === 'number'
      .map(x => (x ? { group: x[0], value: x[1], unit: x[2] } : { }))[0]);
 
 const getCaclulatedValue = (style, documentStyle, key) => {
-    
-    const { group, value, unit } = getValue(style[key]);
+    const { /* group, */ value, unit } = getValue(style[key]);
+    // eslint-disable-next-line no-irregular-whitespace
     if (documentStyle[key] && (unit === 'em' || unit === '%')) {
         let baseValue = documentStyle[key];
         if (key === 'lineHeight' && style[key]) {
-            
             baseValue = getCaclulatedValue(style, documentStyle, 'fontSize');
-            style[key] = baseValue * parseFloat(value);
-        } else {
-            style[key] = parseFloat(baseValue) * parseFloat(value);
-        }
-    } else if (unit === 'px') {
-        style[key] = parseFloat(value);
+            return baseValue * parseFloat(value);
+            // style[key] = baseValue * parseFloat(value);
+        } 
+            return baseValue * parseFloat(value);
+            // style[key] = parseFloat(baseValue) * parseFloat(value);
+        
+    } if (unit === 'px') {
+        return parseFloat(value);
+        // style[key] = parseFloat(value);
     }
     return style[key];
 };
@@ -28,7 +30,9 @@ export default class TextStyle {
         
         Object.keys(style).forEach(key => {
             if (style[key]) {
-                var value = getCaclulatedValue(style, documentStyle, key);
+                const value = getCaclulatedValue(style, documentStyle, key);
+                // eslint-disable-next-line no-param-reassign
+                style[key] = value;
             }
         });
         Object.assign(this, style);
@@ -55,12 +59,12 @@ export default class TextStyle {
         this._weight = value === 'bold' ? 0.3 : 0.7;
         this.styleID++;
     }
-
     get fontSize() {
         return this._fontSize;
     }
 
     set fontSize(value) {
+        
         this._fontSize = value;
         this.styleID++;
     }
@@ -73,6 +77,16 @@ export default class TextStyle {
         this._fill = value;
     }
 
+    // extended stype properties (non native)
+    get lineHeightBottom() {
+        return this._lineHeightBottom;
+    }
+
+    set lineHeightBottom(value) {
+        
+        this._lineHeightBottom = value;
+        this.styleID++;
+    }
     getFlatCopy() {
         return {
             align: this.align,
@@ -82,6 +96,7 @@ export default class TextStyle {
             width: this.wordWrapWidth,
             wordWrapWidth: this.wordWrapWidth,
             lineHeight: this.lineHeight,
+            lineHeightBottom: this.lineHeightBottom,
             letterSpacing: this.letterSpacing,
         };
     }

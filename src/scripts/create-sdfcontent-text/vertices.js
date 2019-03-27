@@ -78,61 +78,70 @@ export function updatePositions(glyphs, sizes, infoFontSize, prevPositions) {
   return positions;
 };
 
-export function positions(glyphs, sizes, infoFontSize, offset) {
-  var positions = new Float32Array(glyphs.length * 4 * 2);
+export function positions(glyphs, size, infoFontSize, offset) {
+  var positionsBuffer = new Float32Array(glyphs.length * 4 * 2);
+  var res = 1
+  
   let i = 0;
   glyphs.forEach((glyph) => {
     const bitmap = glyph.data;
-    const size = sizes[i];
     // bottom left position
-    const x = (glyph.position[0]) + offset[0];
-    const y = glyph.position[1] + offset[1];
+    const x = (glyph.position[0] * res ) + offset[0];
+    const y = (glyph.position[1] * res ) + offset[1];
 
-  
-      // okay
     // quad size
-    const w = bitmap.width * size;
-    const h = bitmap.height * size;
+    const w = bitmap.width * size[i] / infoFontSize * res;
+    const h = bitmap.height * size[i] / infoFontSize * res ;
+
+    // const w = size[i] 
+    // const h = size[i]
+    // console.log('hhhh',glyph.position[1]);//y,h, (y+h),'<--->',bitmap.width,bitmap.height)
 
      // BL
-     positions[i++] = x;
-     positions[i++] = y;
+     positionsBuffer[i++] = x;
+     positionsBuffer[i++] = y;
      // TL
-     positions[i++] = x;
-     positions[i++] = y + h;
+     positionsBuffer[i++] = x;
+     positionsBuffer[i++] = y + h;
      // TR
-     positions[i++] = x + w;
-     positions[i++] = y + h;
+     positionsBuffer[i++] = x + w;
+     positionsBuffer[i++] = y + h;
      // BR
-     positions[i++] = x + w;
-     positions[i++] = y;
-
+     positionsBuffer[i++] = x + w;
+     positionsBuffer[i++] = y;
     });
-  return positions;
-};
+    // debugger
+  return positionsBuffer;
+}
 
-export function sizes(opt, stylesMap) {
+export function sizes(opt, styles) {
   let { text } = opt;
-  text = text.replace(/<[^>]*>/g, '');
-  var sizes = new Float32Array(text.length * 4 * 1);
+  text = text.replace(/<[^>]*>/g, '').replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
+  var sizes = new Float32Array(text.length * 4 * 2);
   let i = 0;
   for (let n = 0; n < text.length; n += 1) {
-    const charStyle = stylesMap.styleAtIdx(n);
+    const charStyle = styles.styleAtIdx(n);
     const { fontSize } = charStyle.style;
     const char = text.charAt(n);
+    const size = fontSize ;//(fontSize/window.innerWidth)*100
+    console.log('size',size)
+
     if (!/\u00AD/g.test(char)) {
       // size
-      sizes[i++] = fontSize;
-      sizes[i++] = fontSize;
+      sizes[i++] = size;
+      sizes[i++] = size;
       // TL
-      sizes[i++] = fontSize;
-      sizes[i++] = fontSize;
+      sizes[i++] = size;
+      sizes[i++] = size;
       // TR
-      sizes[i++] = fontSize;
-      sizes[i++] = fontSize;
+      sizes[i++] = size;
+      sizes[i++] = size;
       // BR
-      sizes[i++] = fontSize;
-      sizes[i++] = fontSize;
+      sizes[i++] = size;
+      sizes[i++] = size;
+      
+
+      
     }
   }
   return sizes;
@@ -140,7 +149,8 @@ export function sizes(opt, stylesMap) {
 
 export function colors(opt, styles) {
   let { text } = opt;// .replace(/\u00AD/g,'-');
-  text = text.replace(/<[^>]*>/g, '');
+  // text = text.replace(/<[^>]*>/g, '');
+  text = text.replace(/<[^>]*>/g, '').replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
   let colors = new Float32Array(text.length * 3 * 4);
   let i = 0;
   for (let n = 0; n < text.length; n += 1) {

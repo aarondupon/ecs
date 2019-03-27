@@ -34,7 +34,7 @@ void main(void)
 
     // gl_Position = vec4((projectionMatrix * translationMatrix * vec3(pos * (64.0/u_fontInfoSize), 1.0)).xy, 0.0, 1.0);
     // gl_Position = position*vec4(1,-1,1,1);//projection * view * model * position;
-    gl_Position =   model * position;// * vec4(1,-1,1,1);
+    gl_Position =   model * position ;// * vec4(1,-1,1,1);
     //  gl_Position = projection * view * model * position;
     // gl_Position = projection * view * model * position;
     gl_PointSize = 5.0;

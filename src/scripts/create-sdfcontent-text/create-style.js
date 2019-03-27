@@ -109,9 +109,10 @@ function parseHtmlStyle(newStyle){
     // stroke: 'black',
     // strokeThickness: 0,
     fill: 'rgba(0,0,0,1)',
-    fontSize: 26,
+    fontSize: 14,
+    lineHeightBottom:'0px',
     fontWeight: 'normal',
-    lineHeight: '2em',
+    lineHeight: '1em',
     wordWrap: 'break-word',
     align: 'left',
     wordWrapWidth: newStyle.width || false ,
@@ -123,6 +124,14 @@ function parseHtmlStyle(newStyle){
     const pixiTextStyle = Object.keys(htmlStyle).reduce((style,key)=>{
         
         switch (key) {
+            // case 'lineHeightBottom':
+            // style.lineHeightBottom = getValue(htmlStyle[key].value);
+            
+            // break;
+        // case 'fontSize': 
+        //     style.fontSize = (htmlStyle[key]);
+        //     console.log('htmlStyle[key]',htmlStyle[key])
+        // break
         case 'fill': 
             style.fill = parseColor(htmlStyle[key]).rgba;
             break
@@ -167,4 +176,4 @@ function createStyle(styles,style) {
     return newStyle;
 }
 
-export default moize.deep(createStyle)
+export default moize.deep(createStyle);

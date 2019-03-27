@@ -11,7 +11,7 @@ class Style{
     }
     styleAtIdx(charIdx){
         // console.log('styleAtIdx',charIdx,this.styles)
-        const res  = this.styles.filter(x=>x.styleIdx <= charIdx )
+        const res  = this.styles.filter(x => x.styleIdx <= charIdx )
         
         return res[res.length-1];
     }
@@ -29,7 +29,11 @@ function createStyleIndex(opt){
     const {text} = opt
     // const res = (/<[^>]*>/g).match(text);
     var myRe = /<[^>]*>/g;
-    var str = text;
+    var str = text//.replace(/\s/g,'+')//.replace(/\n/g,'%')
+    
+    // str = str.replace(/(\uE000)/g,'\u00AD');
+    // str = str.replace(/(\uE000)/g,'');
+    // console.log('str',str)
     var myArray;
     let styles = []
     const styleInfo =  {
@@ -43,11 +47,15 @@ function createStyleIndex(opt){
         const tagName = myArray[0].replace(/<|>|\//g,'');
         const slice = str.slice(0,myRe.lastIndex);
         const tagCharLeftLenghtToRemove =    slice.length - slice.replace(/<[^>]*>/g,'').length 
+        const idx2 = myArray.index + ( isClosing ? 3 : 2)
         const idx = myRe.lastIndex - tagCharLeftLenghtToRemove;
         const styleInfo =  {
             styleIdx:idx,
+            styleAtIdxWithtags:idx2,
             ...getStyleBytagName(tagName,isClosing,opt.styles)
         }
+
+        console.log('aaron:',str,isClosing,idx,str.slice(idx2),getStyleBytagName(tagName,isClosing,opt.styles).style.fontSize)
         styles.push(styleInfo);
     }
     return new Style(styles);  

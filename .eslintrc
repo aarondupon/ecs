@@ -12,6 +12,8 @@
   "rules": {
     "semi": 2,
     "no-tabs":"off",
+    "import/no-named-as-default":"off",
+    "import/no-named-as-default-member":"off",
     "import/no-extraneous-dependencies":"off",
     "guard-for-in":"off",
     "no-console":"off",
@@ -25,7 +27,8 @@
     "no-plusplus":"off",
     "import/no-unresolved":[2, 
       { 
-        "ignore": ["./system","./scene"]
+        "ignore": ["./system","./scene",".ts"]
+
       }]
 
   }
