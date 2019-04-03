@@ -65,7 +65,7 @@ const myStyles = {
         color: 'rgba(0,255,255,1)',
         wordWrap: 'break-word',
         width: 100,
-        lineHeight:'80px',
+        lineHeight:'40px',
         lineHeightBottom: '0px',
         // lineHeight:'5em',
         // align: "right"
@@ -95,7 +95,7 @@ const myStyles = {
     },
     b: {
         color: 'rgba(255,255,0,1)',
-        fontSize:'50px',
+        fontSize:'30px',
         lineHeight: '80px',
         lineHeightBottom: '0px',
         // fontSize: 60,
@@ -186,8 +186,20 @@ const createTextObject = (buffers, baseObj, width) => {
         Object.keys(style).forEach(key => {
             flatCopyStyle[key] = style[key].getFlatCopy();
         });
+        let test = text.match(/\uE000/g);
+
+
+        // AUOT SPLITE WORDS :
+        // text.split('').join('\uE000') 
+        let segmentSize = 2
+        let reg = `.{1,${segmentSize}}`;
+        // text = text.match(new RegExp(reg,"g")).join('\uE000');//join('-')//join('\uE000') 
+
+
         const opt = {
-            text: text.replace(/(\uE000)/g, '\uE000'),
+            text,//: text+ (test ? test.join(' ') : '') , // dirty FIX for HYPEN: 
+            // text: text.replace(/(\uE000)/g, '\uE000'),
+            // text: text.replace(/(\uE000)/g, '-'),
             font,
             styles: flatCopyStyle,
             breakWords:true,
@@ -214,8 +226,12 @@ const createTextObject = (buffers, baseObj, width) => {
         const texWidth = font.common.scaleW;
         const texHeight = font.common.scaleH;
         const { glyphs } = layout;
+        
         // get common vertex data
-        const sizes = vertices.sizes(opt, stylesIndexs);
+        // opt.text  +='  ';
+        
+        // const sizes = vertices.sizes(opt, stylesIndexs);
+        const sizes = vertices.sizes(glyphs,opt, stylesIndexs);
         // console.log('window.innerWidth',window.innerWidth * window.devicePixelRatio)
         const x = ( (index % window.innerWidth));// * 10 * font.info.size) 
 
@@ -224,7 +240,7 @@ const createTextObject = (buffers, baseObj, width) => {
         const positions = multiplyView(vertices.positions(glyphs, sizes, font.info.size, offset));
        
         const uvs = vertices.uvs(glyphs, texWidth, texHeight, false);
-        const colors = vertices.colors(opt, stylesIndexs);
+        const colors = vertices.colors(glyphs,opt, stylesIndexs);
         console.log('fontSize:',font.info.size,stylesIndexs,sizes,uvs)
 
         vao.size.buffer.push(...sizes);
@@ -232,13 +248,15 @@ const createTextObject = (buffers, baseObj, width) => {
         vao.position.buffer.push(...positions);
         vao.color.buffer.push(...colors);
 
-        const count = (vao.position.buffer.length / (4 * 2));
+        const count =( (vao.position.buffer.length / (4 * 2)) ) - 1;
         const indices = createIndices({
             clockwise: true,
             type: 'uint16',
             count,
             start: 0,
         });
+
+        console.log('indices.length',count,text.replace(/\uE000/g,'').replace(/<[^>]*>/g,'').length)
 
         vao.index.buffer = indices;
 
@@ -348,11 +366,11 @@ const buffer = {
     }
 
 
-    const styles = createStyle(myStyles , { width: 500, breakWords: true });
+    const styles = createStyle(myStyles , { width: (window.innerWidth/2), breakWords: true });
     // const txt =  'A new trai\uE000ler for The Wan\uE000der\uE000ing Earth <a>shows</a>\n off a des\uE000per\uE000ate plan to save the planet Hi I <a>am a com\uE000pu\uE000ter</a>, tak\uE000ing over the world!';
     // const txt = 'A new trailer for The Wandering Earth';//`${renderCount}A` +  (renderCount%2 ? `A` : '') //:${Date.now()}`;// 'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
     // const txt =  'A new trai\uE000ler sho\uE000ws for The Wan\uE000der\uE000ing Earth Lorem Ipsum is slechts een proeftekst uit het druk\uE000ke\uE000rij- en zet\uE000terij\uE000wezen. Lorem Ipsum is de standaard proeftekst in deze bedrijfstak sinds de 16e eeuw, ';
-    // const txt =  'A new trai\uE000ler sho\uE000ws for The Wan\uE000der\uE000ing Earth Lo\uE000rem Ip\uE000sum is slechts een proef\uE000tekst uit het druk\uE000ke\uE000rij- en zet xx ter ij - we\uE000zen. Lo\uE000rem Ip\uE000sum is de stan\uE000daard proef\uE000tekst in deze be\uE000drijfs\uE000tak sinds de 16e eeuw, ';
+    const txt =  'A new trai\uE000ler sho\uE000ws for The Wan\uE000der\uE000ing Earth Lo\uE000rem Ip\uE000sum is slechts een proef\uE000tekst uit het druk\uE000ke\uE000rij- en zet xx ter ij - we\uE000zen. Lo\uE000rem Ip\uE000sum is de stan\uE000daard proef\uE000tekst in deze be\uE000drijfs\uE000tak sinds de 16e eeuw, ';
     // const txt =  'A new traixxxxxxxxxx\u00ADler sho\u00ADws for The Wan\u00ADder\u00ADing Earth Lo\u00ADrem Ip\u00ADsum is slechts een proef\u00ADtekst uit het druk\u00ADke\u00ADrij- en zet xx ter ij - we\u00ADzen. Lo\u00ADrem Ip\u00ADsum is de stan\u00ADdaard proef\u00ADtekst in deze be\u00ADdrijfs\u00ADtak sinds de 16e eeuw, ';
 
     // const txt =  'A new trai\uE000ler <a>shows</a> for The Wan\uE000der\uE000ing Earth';
@@ -360,8 +378,18 @@ const buffer = {
     // const txt =  '<a>shows</a> off a des';
     // const txt =  '<b>c\uE000om\uE000pu\uE000ter?</b>123\uE0004ing over the world!';
     // const txt =  '<b>12\uE000345\uE000678?</b><br>\uE000xxx\uE0004ing over the world!';
-    // const txt =  '12\uE000345\uE000678?<br>\uE000xxx\uE0004ing over the world!';
-    const txt =  '<b>com xx pu\uE000ter?</b>Hi I am a co\uE000mpu\uE000ter?\uE000123\uE0004ing over \nthe world!';
+    // const txt =  '<b>12\uE000345</b>\uE000678 \uE000? over the world!';
+    // const txt =  '<b>1234 5678</b> ? over the world!';
+    // const txt =  '<b>1234\uE0005678</b> ? over the world!';
+    // const txt =  '<b>12345678</b> ? over the world!';
+    // const txt =  '<b>com\uE000pu\uE000ter?</b> Hi I am a com\uE000pu\uE000ter?\uE000123\uE0004ing over the world!';
+
+    // const txt =  '<b>com\uE000pu\uE000ter?</b> Hi I am a com\uE000pu\uE000ter?\uE000123\uE0004ing over the world!';
+    // const txt =  '<b>com\uE000pu\uE000ter?</b>';
+    // const txt =  'computer?';
+
+
+    // const txt = "In tegenstelling \uE000tot wat algemeen aangenomen wordt is Lorem Ipsum niet zomaar willekeurige tekst. het heeft zijn wortels in een stuk klassieke latijnse literatuur uit 45 v.Chr. en is dus meer dan 2000 jaar oud. Richard McClintock!"
     // const txt =  'coOOO\uE000OOOOO\uE000om\uE000pu\uE000ter?';
     // const txt =  'Anewtrai\u00ADler sho\u00ADws';
     // const txt =  'A new trai\u00ADler sho\u00ADws for The Wan\u00ADder\u00ADing Earth Lo\u00ADrem Ip\u00ADsum is slechts een proef\u00ADtekst uit het druk\u00ADke\u00ADrij- en zet xx ter ij - we\u00ADzen. Lo\u00ADrem Ip\u00ADsum is de stan\u00ADdaard proef\u00ADtekst in deze be\u00ADdrijfs\u00ADtak sinds de 16e eeuw, ';

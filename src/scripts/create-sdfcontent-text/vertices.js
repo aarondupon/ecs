@@ -114,75 +114,49 @@ export function positions(glyphs, size, infoFontSize, offset) {
   return positionsBuffer;
 }
 
-export function sizes(opt, styles) {
-  let { text } = opt;
-  text = text.replace(/<[^>]*>/g, '').replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
-  var sizes = new Float32Array(text.length * 4 * 2);
-  let i = 0;
-  for (let n = 0; n < text.length; n += 1) {
+
+export function sizes(glyphs, opt, styles) {
+  return glyphs.reduce((sizes, glyph, n) => {
     const charStyle = styles.styleAtIdx(n);
     const { fontSize } = charStyle.style;
-    const char = text.charAt(n);
-    const size = fontSize ;//(fontSize/window.innerWidth)*100
-    console.log('size',size)
-
-    if (!/\u00AD/g.test(char)) {
-      // size
-      sizes[i++] = size;
-      sizes[i++] = size;
-      // TL
-      sizes[i++] = size;
-      sizes[i++] = size;
-      // TR
-      sizes[i++] = size;
-      sizes[i++] = size;
-      // BR
-      sizes[i++] = size;
-      sizes[i++] = size;
-      
-
-      
-    }
-  }
-  return sizes;
+    const {char} = glyphs;
+    const size = fontSize ;
+    sizes.set([
+      size, size, // BL
+      size, size, // TL
+      size, size, // TR
+      size, size, // BR
+    ],n * (2 * 4 ))
+    return sizes;
+  }, new Float32Array(glyphs.length * 2 * 4));
 };
 
-export function colors(opt, styles) {
-  let { text } = opt;// .replace(/\u00AD/g,'-');
-  // text = text.replace(/<[^>]*>/g, '');
-  text = text.replace(/<[^>]*>/g, '').replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
-  let colors = new Float32Array(text.length * 3 * 4);
-  let i = 0;
-  for (let n = 0; n < text.length; n += 1) {
-    const charStyle = styles.styleAtIdx(n);
-    const { fill = [0, 0, 0] } = charStyle.style;
-    const char = text.charAt(n);
-    if (!/\u00AD/g.test(char)) {
-      const [R, G, B] = fill;
-      
-      // TL
-      // if (charStyle.name === 'a') console.log('fillfill', fill, charStyle.name, charStyle);
 
+export function colors(glyphs,opt, styles) {
+    return glyphs.reduce((colors,glyph,n) => {
+      const charStyle = styles.styleAtIdx(n);
+      const { fill = [0, 0, 0] } = charStyle.style;
+      let i = n * (3 * 4 );
+      const {char} = glyph;
+        const [R, G, B] = fill;
+        colors[i++] = R;
+        colors[i++] = G;
+        colors[i++] = B;
 
-      colors[i++] = R;
-      colors[i++] = G;
-      colors[i++] = B;
+        // TR
+        colors[i++] = R;
+        colors[i++] = G;
+        colors[i++] = B;
 
-      // TR
-      colors[i++] = R;
-      colors[i++] = G;
-      colors[i++] = B;
+        // BR
+        colors[i++] = R;
+        colors[i++] = G;
+        colors[i++] = B;
 
-      // BR
-      colors[i++] = R;
-      colors[i++] = G;
-      colors[i++] = B;
-
-      // BL
-      colors[i++] = R;
-      colors[i++] = G;
-      colors[i++] = B;
-    }
-  }
-  return colors;
+        // BL
+        colors[i++] = R;
+        colors[i++] = G;
+        colors[i++] = B;
+        return colors;
+    },new Float32Array(glyphs.length * 3 * 4));
 };

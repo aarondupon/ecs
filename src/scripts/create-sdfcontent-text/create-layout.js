@@ -11,7 +11,7 @@ var M_WIDTHS = ['m', 'w']
 var CAP_HEIGHTS = ['H', 'I', 'N', 'E', 'F', 'K', 'L', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 
-const hypen = /\u00AD/
+const hypen = /(\u00AD|\uE000)/
 const SPACE = ' '
 var TAB_ID = '\t'.charCodeAt(0)
 var SPACE_ID = ' '.charCodeAt(0)
@@ -194,6 +194,7 @@ TextLayout.prototype.update = function(opt) {
     let nn = 0
 
     for (var i=start; i<end; i++) {
+    
       // if(lineIndex === 3 ) console.log('line: ',lineIndex,line.text,text.charAt(start+nn),line.text.slice(nn,nn+1),charIdx)
 
       // var id = text.charCodeAt(charIdx)
@@ -203,11 +204,8 @@ TextLayout.prototype.update = function(opt) {
       var char = line.text.slice(nn,nn+1)
       var id = char.charCodeAt(0)
       var glyph = self.getGlyph(font, id)
-
-      if(lineIndex === 3 ){
-        console.log('lineIndex',lineIndex,char,'>>',line.text.slice(nn,nn+1))
-      }
-
+      console.log('line:',lineIndex,i,char)
+  
       var charStyle = self.getCharStyles(charIdx);
           
       if(!charStyle){
@@ -217,28 +215,31 @@ TextLayout.prototype.update = function(opt) {
       const {fontSize} = charStyle.style;
             
       let ty = 0;
-      // console.log('maxLineHeightBottom',maxLineHeightBottom)
-      
-      /* if(isWhitespace(char)){      
-      } */
-     
-      if(/\uE000/g.test(char)){
+
+      if(/(\uE000|\u00AD)/g.test(char)){
 
         
         const isLastChar = end-1 === i
         glyph = self.getGlyph(font, HYPEN_ID);
         
-          if(charIdx !== end-1){
+          if(!isLastChar){
             console.log('isLastChar::',charIdx === end-1)
             glyph = {...self.getGlyph(font, HYPEN_ID)}
+            glyph.xadvance = 0;
             glyph.width = 0;
           }
           // glyph.width =0;
         
         console.log('isLastChar',isLastChar,charIdx,end-1)
-        !isLastChar && (glyph.xadvance = 0);
+        // !isLastChar && (glyph.xadvance = 0);
+      }
+      const isLastChar = end-1 === i
+      if(id === HYPEN_ID && charIdx !== end-1){
+        console.log('isLastChar',isLastChar)
+          glyph = null
       }
       if(glyph){
+         
         if(/(\?|[1-4])/.test(glyph.char)
         
           ) {
@@ -250,7 +251,7 @@ TextLayout.prototype.update = function(opt) {
         // ty += -baseline*fontSize; // align baseline 
 
 
-        ty +=  y  +(maxLineHeight/2) - charStyle.style.fontSize ;// + (glyph.yoffset*charStyle.style.fontSize) ;
+        ty +=  y + (maxLineHeight/2) - charStyle.style.fontSize ;// + (glyph.yoffset*charStyle.style.fontSize) ;
         // ty -= (baseline - glyph.yoffset) * charStyle.style.fontSize/font.info.size ;
         ty -= ( - glyph.yoffset) * charStyle.style.fontSize/font.info.size ;
         
@@ -265,6 +266,7 @@ TextLayout.prototype.update = function(opt) {
         }else{
           
         }
+
 
         var tx = x
         if (align === ALIGN_CENTER) 
@@ -344,6 +346,10 @@ TextLayout.prototype._setupSpaceGlyphs = function(font) {
 
 TextLayout.prototype.getGlyph = function(font, id) {
   var glyph = getGlyphById(font, id)
+  if(id ===  57344) { //<Private Use, First>	
+    return {...getGlyphById(font, HYPEN_ID),char:'-'}
+  }
+
   if (glyph)
     return glyph
   else if (id === TAB_ID) 
@@ -353,7 +359,7 @@ TextLayout.prototype.getGlyph = function(font, id) {
   return null
 }
 
-TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSpace=false,style) {
+TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSpace=false,measureHypen=false,style) {
   var letterSpacing = this._opt.letterSpacing || 0
   var font = this._opt.font
   var curPen = 0
@@ -371,52 +377,44 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
   }
   
   for (var i=start; i < end; i++) {
-    console.log('nextWidth:',start,end,text)
+    // console.log('nextWidth:',start,end,text)
     var id = text.charCodeAt(i)
+    var char = text.charAt(i)
     var glyph = this.getGlyph(font, id)
+    
    
   
     var charStyle = this.getCharStyles(i);
-    // console.log('computeMetrics',text.charAt(i),charStyle.style.fontSize)
+    console.log('computeMetrics',char,charStyle.style.fontSize)
     // if(text == '333?123' ) 
       // console.log('text::'+text,'<--',text.charAt(i),i,charStyle.style.fontSize)
     
     if(!charStyle){
+      
        charStyle = this.getCharStyles(start) || this.getCharStyles(0); 
     }
 
     const {fontSize} = charStyle.style;
-    
-    
-    if (glyph) {
-      glyph.char = text.charAt(i);
-console.log('xoffset',glyph.char,glyph.xoffset)
-      // const charStyle = this.getCharStyles(i);// || this.getCharStyles(0); 
-      //move pen forward
-
-      // if(!style) debugger
-      const fontScale = (charStyle.style.fontSize/font.info.size);
-      
-      var xoff = glyph.xoffset;
-      var kern = lastGlyph ? getKerning(font, lastGlyph.id, glyph.id) : 0
-      // curPen += kern;///fontScale;
-      curPen += (xoff-kern)*fontScale;
-    
-      // var nextPen = (curPen + glyph.xadvance + letterSpacing) * fontScale;
-      // var nextWidth = (curPen + glyph.width) * fontScale;
-
-      // curPen -= kern * fontScale;
-
-      var nextPen = curPen + ((glyph.width + glyph.xadvance + letterSpacing) * fontScale);
-      var nextWidth = curPen + (( glyph.width + glyph.xadvance) * fontScale);
-      
-      
-     if(text.slice(start,end) == 'compu') console.log('nextWidth///',glyph.xadvance,fontScale,letterSpacing,text.slice(start,end),nextPen,nextWidth);
-
-      //  debugger
-      //  if(text === 'shows') 
-      //    console.log('nextWidth',glyph.char,nextWidth,style.style.fontSize/font.info.size)//,( glyph.width) * fontScale,nextWidth,'fontSize',fontSize,'---->',i,':',style.style.fontSize,'::::',charStyle.style.fontSize)
+   
+    const measureGlyph = (measureHypen ||  !isHypen(char));
+    // if (glyph  && measureGlyph) {
+    if (glyph  && measureGlyph) {
      
+    
+      const fontScale = (charStyle.style.fontSize/font.info.size);
+      var xoff = glyph.xoffset;
+      var kern = lastGlyph ? getKerning(font, lastGlyph.id, glyph.id) : 0;
+
+      var nextPen = curWidth;
+      var nextWidth = curWidth;
+
+     
+        curPen += (xoff-kern)*fontScale;
+        var nextPen = curPen + ((glyph.width + glyph.xadvance + letterSpacing) * fontScale);
+        var nextWidth = curPen + (( glyph.width + glyph.xadvance) * fontScale);
+      
+    
+
       if(measureSpace && id === SPACE_ID){
         const spaceWidth = glyph.xadvance
         
@@ -429,20 +427,33 @@ console.log('xoffset',glyph.char,glyph.xoffset)
         // break stops if font is large
         // break
       }
+     
       //otherwise continue along our line
       curPen = nextPen
       curWidth = nextWidth
       lastGlyph = glyph
+
+      
+
     }
-    count++
-  }
-  //make sure rightmost edge lines up with rendered glyphs
-  if (lastGlyph){
-    const fontSize = charStyle.style.fontSize;
-    const fontScale = (fontSize/font.info.size);
-    curWidth += lastGlyph.xoffset*fontScale;// + (lastGlyph.width*fontScale)
+    // if(char === '8' ){
+    //  console.log('check: (1)',glyph,'measureGlyph',measureGlyph,'measureHypen',measureHypen,char,curWidth === 241.4285714285714,curWidth);
+    // }else{
+    //  console.log('check: (2)',glyph,'measureGlyph',measureGlyph,'measureHypen',measureHypen,char,curWidth === 241.4285714285714,curWidth);
+    // }
+    // console.log('glyphglyphglyphglyph',glyph,curWidth,'241.4285714285714')
+
+     count++
 
   }
+  
+  //make sure rightmost edge lines up with rendered glyphs
+  // if (lastGlyph){
+  //   const fontSize = charStyle.style.fontSize;
+  //   const fontScale = (fontSize/font.info.size);
+  //   curWidth += lastGlyph.xoffset*fontScale;// + (lastGlyph.width*fontScale)
+
+  // }
   console.log('countcountcount',start,count)
   return {
     start: start,
@@ -470,6 +481,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
   // const noTagsText = text.replace(/<[^>]*>/g,'');
   // let allLines =  [text.replace('\n','')].map((line,i) => {
   let allLines =  _text.split(/(?=<br>|\n)/).map((line,i) => {
+    
       // const words = line.replace(/<[^>]*>/g,'').split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));
       let words = line.replace('\n','').replace(/<[^>]*>/g,'').split(' ')//.filter(x=>(x !=='' && x !==' '));
       // words =  words.map(x=>x.split('').join('\uE000'))
@@ -513,11 +525,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
     createLine(lines,width)
     
     function add(lines, text,myCharStyle,isChunk = false){
-     
-       if(lines.length === 0){
-        createLine(lines,width)
-       }
-
+    
    
       const curLine =  lines[lines.length - 1];
      
@@ -533,8 +541,8 @@ TextLayout.prototype.wordwrap = function(text,opt) {
       
       let word = origWord;
       
-      word = word.replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
-      const wordLength = origWord.replace(/(\u00AD|\uE000)/g,'+').length+1
+      // word = word.replace(/(\uE000)/g,'\u00AD') // hack fo fix hidden hypens and styling
+      const wordLength = word.length;//origWord.replace(/(\u00AD|\uE000)/g,'+').length+1
       curPen = lines.length >  0 ? lines[lines.length - 1].start+lines[lines.length - 1].text.length : 0;
      
       
@@ -544,13 +552,15 @@ TextLayout.prototype.wordwrap = function(text,opt) {
       // const wordBox =  measure(word.replace(/(\u00AD)/g),true,charStyle);
       // const wordBox =  measure(word,true,this.getCharStyles(curPen));//measure(word.replace(/(\u00AD)/g,''),true,this.getCharStyles(curPen));
       // console.log('fontScale-fontScale','curPen',curPen,'totalPen',totalPen,this.getCharStyles(curPen).style.fontSize,'   \t\t',word)//,lines[lines.length - 1].start,'curPen', curPen,'::::',this.getCharStyles(curPen).style.fontSize)
-      const wordBox = this.computeMetrics(text,totalPen,totalPen+wordLength,width,true);
-      console.log('wordBox::',wordBox.width,word,spaceLeft,'=',text.slice(totalPen,totalPen+wordLength))
+      const wordBox = this.computeMetrics(text,totalPen,totalPen+wordLength,width,false);
+      
+      console.log('wordBox::',text,'\n',wordBox,word,spaceLeft,'=',text.slice(totalPen,totalPen+wordLength))
 
       // totalPen += wordLength; // plus one for space!!
       
       // doesn't fit splt in chucks and try again please!
-      if (wordBox.width > spaceLeft) { 
+      if (wordBox.width > spaceLeft) {
+        
         let chunkIdx = 0;
         let chunkIdx__ = 0;
         const splitChunks = (chunks,startSpaceLeft,width,lines,deep) =>{
@@ -563,11 +573,9 @@ TextLayout.prototype.wordwrap = function(text,opt) {
           while(chunks.length > 0){
             
             const chunk = chunks[0];
+            const isLastChunk =  chunks.length === 1;
             let origChunk = chunks[0];
-            const chunkLength = origChunk.replace(/(\u00AD|\uE000)/g,'+').length
-            // const chunkLength = chunk.replace(/\u00AD/g,'').length+1;
-            // curPen += chunk.length
-            console.log('chunkbox::',chunk,chunkLength)
+            const chunkLength =  chunk.length;// + (isLastChunk ? 0 : 1);
             const charIdx = curPen;
             
    
@@ -604,6 +612,8 @@ TextLayout.prototype.wordwrap = function(text,opt) {
             // if (spaceLeft+chunkbox.width > spaceLeft) {  // don't allow overflow on the right side of the text box bounders
             if (chunkbox.width > spaceLeft) {  // allow overflof on the right side of the text box bounders
               // debugger 
+
+              // add(lines,'\uE000',charStyle)
               createLine(lines,width)
               spaceLeft = Math.max(0,width - (chunkbox.width - space))
            
@@ -635,8 +645,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
              
             }else{
               spaceLeft -= chunkbox.width + space;
-              
-              add(lines,chunk,charStyle,true)
+              add(lines, chunk,charStyle,true)
             }
            
            
@@ -662,11 +671,12 @@ TextLayout.prototype.wordwrap = function(text,opt) {
         // if (wordBox.width > spaceLeft) {
         //         createLine(lines,width)
         //   }
-        let chunks = (word.split(/(?=\u00AD|\uE000)/g))
+        let chunks = (word.split(/(\u00AD|\uE000|\u0001)/g))
+        
         // let chunks = (word.split(/(\u00AD|\uE000)/g)).filter(x=>x !=='')
         console.log('chunks:::::',chunks)
         spaceLeft = splitChunks(chunks,spaceLeft, width,lines)
-
+        
         
 
         // debugger
@@ -695,7 +705,9 @@ TextLayout.prototype.wordwrap = function(text,opt) {
         currChunkIdx = currCharIdx;
         // spaceLeft -= (wordBox.width + (check ? space: 0))
       }
-      totalPen += wordLength; // plus one for space!!
+
+
+      totalPen += wordLength + 1; // plus one for space!!
 
 
       
