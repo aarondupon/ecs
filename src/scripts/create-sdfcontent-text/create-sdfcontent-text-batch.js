@@ -79,6 +79,10 @@ const myStyles = {
         fontStyle: 'italic',
         color: '#4488ff',
     },
+    em: {
+        fontStyle: 'italic',
+        color: '#4488ff',
+    },
     pixi: {
         fontSize: '30px',
         color: '#efefef'
@@ -88,8 +92,8 @@ const myStyles = {
         color: '#efefef'
     },
     a: {
-        color: 'rgba(255,255,0,1)',
-       
+        color: 'rgba(255,0,0,1)',
+        textDecoration:'underline',
         // fontSize: 60,
 
     },
@@ -192,8 +196,8 @@ const createTextObject = (buffers, baseObj, width) => {
         // AUOT SPLITE WORDS :
         // text.split('').join('\uE000') 
         let segmentSize = 2
-        let reg = `.{1,${segmentSize}}`;
-        // text = text.match(new RegExp(reg,"g")).join('\uE000');//join('-')//join('\uE000') 
+        let reg = `(.{1,${segmentSize}})`;
+        text = text.match(new RegExp(reg,"g")).join('\uE000');//join('-')//join('\uE000') 
 
 
         const opt = {
@@ -213,6 +217,7 @@ const createTextObject = (buffers, baseObj, width) => {
         }
         // get visible glyphs
         const stylesIndexs = createStyleIndex(opt);
+        
 
         // LAYOUT ---> REPLACE!
         const layout = createLayout(opt, stylesIndexs);
@@ -366,11 +371,13 @@ const buffer = {
     }
 
 
-    const styles = createStyle(myStyles , { width: (window.innerWidth/2), breakWords: true });
+    const styles = createStyle(myStyles , { width:200, breakWords: true });
     // const txt =  'A new trai\uE000ler for The Wan\uE000der\uE000ing Earth <a>shows</a>\n off a des\uE000per\uE000ate plan to save the planet Hi I <a>am a com\uE000pu\uE000ter</a>, tak\uE000ing over the world!';
     // const txt = 'A new trailer for The Wandering Earth';//`${renderCount}A` +  (renderCount%2 ? `A` : '') //:${Date.now()}`;// 'A new trailer for The Wandering Earth <a>shows</a> off a desperate plan to save the planet';//'Hi I <a>am a computer</a>, taking over the world!';
     // const txt =  'A new trai\uE000ler sho\uE000ws for The Wan\uE000der\uE000ing Earth Lorem Ipsum is slechts een proeftekst uit het druk\uE000ke\uE000rij- en zet\uE000terij\uE000wezen. Lorem Ipsum is de standaard proeftekst in deze bedrijfstak sinds de 16e eeuw, ';
-    const txt =  'A new trai\uE000ler sho\uE000ws for The Wan\uE000der\uE000ing Earth Lo\uE000rem Ip\uE000sum is slechts een proef\uE000tekst uit het druk\uE000ke\uE000rij- en zet xx ter ij - we\uE000zen. Lo\uE000rem Ip\uE000sum is de stan\uE000daard proef\uE000tekst in deze be\uE000drijfs\uE000tak sinds de 16e eeuw, ';
+    // const txt =  'A <a>new <b>trai\uE000ler<b/>\n</a> sho\uE000ws for <em>The <a>Wan\uE000der\uE000ing<a/> Earth</em> Lo\uE000rem Ip\uE000sum is slechts een proef\uE000tekst uit het druk\uE000ke\uE000rij- en zet xx ter ij - we\uE000zen. Lo\uE000rem Ip\uE000sum is de stan\uE000daard proef\uE000tekst in deze be\uE000drijfs\uE000tak sinds de 16e eeuw,';
+    const txt =  'A <a>new <b>trai\u00ADler<b/>\n</a> sho\u00ADws for <em>The <a>Wan\u00ADder\u00ADing<a/> Earth</em> Lo\u00ADrem Ip\u00ADsum is slechts een proef\u00ADtekst uit het druk\u00ADke\u00ADrij- en zet xx ter ij - we\u00ADzen. Lo\u00ADrem Ip\u00ADsum is de stan\u00ADdaard proef\u00ADtekst in deze be\u00ADdrijfs\u00ADtak sinds de 16e eeuw,';
+
     // const txt =  'A new traixxxxxxxxxx\u00ADler sho\u00ADws for The Wan\u00ADder\u00ADing Earth Lo\u00ADrem Ip\u00ADsum is slechts een proef\u00ADtekst uit het druk\u00ADke\u00ADrij- en zet xx ter ij - we\u00ADzen. Lo\u00ADrem Ip\u00ADsum is de stan\u00ADdaard proef\u00ADtekst in deze be\u00ADdrijfs\u00ADtak sinds de 16e eeuw, ';
 
     // const txt =  'A new trai\uE000ler <a>shows</a> for The Wan\uE000der\uE000ing Earth';

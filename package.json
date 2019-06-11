@@ -92,6 +92,8 @@
     "gulp": "^4.0.0",
     "hex-rgb": "^3.0.0",
     "hex2rgb": "^2.2.0",
+    "himalaya": "^1.1.0",
+    "html-dom-parser": "^0.2.0",
     "icosphere": "^1.0.0",
     "img": "^1.0.0",
     "json-colorizer": "^2.1.2",

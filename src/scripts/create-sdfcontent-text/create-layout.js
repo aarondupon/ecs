@@ -1,10 +1,6 @@
-// var wrap = require('word-wrapper-improved');
-// var wordWrap = require('word-wrapper')
 import moize from 'moize';
 import xtend from 'xtend';
 import number from 'as-number';
-// var xtend = require('xtend')
-// var number = require('as-number')
 
 var X_HEIGHTS = ['x', 'e', 'a', 'o', 'n', 's', 'r', 'c', 'u', 'm', 'v', 'w', 'z']
 var M_WIDTHS = ['m', 'w']
@@ -57,13 +53,9 @@ function TextLayout(opt, charStyles) {
 }
 TextLayout.prototype.getCharStyles = function getCharStyles(charIdx){
   const {charStyles} = this;
-  // console.log('TextLayout.prototype.getCharStyles',charIdx,charStyles.styleAtIdx(charIdx).style.fontSize);
-  // if(charStyles.styleAtIdx(charIdx).style.fontSize === 60) debugger
-  
   return charStyles.styleAtIdx(charIdx);
 }
 TextLayout.prototype.update = function(opt) {
-  // console.log('TextLayout.prototype.update')
   opt = xtend({
     measure: this._measure,
     measureOld:this._measureOld,
@@ -84,7 +76,7 @@ TextLayout.prototype.update = function(opt) {
 
   var font = opt.font
   this._setupSpaceGlyphs(font);
-  var lines = this.wordwrap(text,opt);
+  var lines = this.wordwrap(opt);
   
   var minWidth = opt.width || 0
 
@@ -385,9 +377,6 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
    
   
     var charStyle = this.getCharStyles(i);
-    console.log('computeMetrics',char,charStyle.style.fontSize)
-    // if(text == '333?123' ) 
-      // console.log('text::'+text,'<--',text.charAt(i),i,charStyle.style.fontSize)
     
     if(!charStyle){
       
@@ -470,27 +459,16 @@ TextLayout.prototype.computeMetrics = function(text, start, end, width,measureSp
  * @param  {Boolean} cut   [description]
  * @return {[type]}        [description]
  */
-TextLayout.prototype.wordwrap = function(text,opt) {
-  const {width = 80, br = '\n',measure,_text} = opt;
+TextLayout.prototype.wordwrap = function(opt) {
+  const {width = 80, br = '\n',measure,text} = opt;
   const lines = [];
   let curPen = 0;
   let totalPen = 0;
   let currCharIdx = 0;
   let currChunkIdx = 0;
-  // console.log('texttexttexttext',text,opt)
-  // const noTagsText = text.replace(/<[^>]*>/g,'');
-  // let allLines =  [text.replace('\n','')].map((line,i) => {
-  let allLines =  _text.split(/(?=<br>|\n)/).map((line,i) => {
-    
-      // const words = line.replace(/<[^>]*>/g,'').split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));
-      let words = line.replace('\n','').replace(/<[^>]*>/g,'').split(' ')//.filter(x=>(x !=='' && x !==' '));
-      // words =  words.map(x=>x.split('').join('\uE000'))
 
-      
-      console.log('wordswordswords',words)
-  // let allLines =  text.split('\n').map((line,i) => {
-  //   const words = (line).split(/(\s*\s)+?/).filter(x=>(x !=='' && x !==' '));
-    // const lineIdx = 0;
+  const allLines =  text.split(/(?=<br>|\n)/).map((line,i) => {
+    let words = line.replace('\n','').replace(/<[^>]*>/g,'').split(' ');
     let spaceLeft = width;
     // const letterSpacing =  opt.letterSpacing || 0;
     // const charCode = ' '.charCodeAt(0)
@@ -552,7 +530,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
       // const wordBox =  measure(word.replace(/(\u00AD)/g),true,charStyle);
       // const wordBox =  measure(word,true,this.getCharStyles(curPen));//measure(word.replace(/(\u00AD)/g,''),true,this.getCharStyles(curPen));
       // console.log('fontScale-fontScale','curPen',curPen,'totalPen',totalPen,this.getCharStyles(curPen).style.fontSize,'   \t\t',word)//,lines[lines.length - 1].start,'curPen', curPen,'::::',this.getCharStyles(curPen).style.fontSize)
-      const wordBox = this.computeMetrics(text,totalPen,totalPen+wordLength,width,false);
+      const wordBox = this.computeMetrics(text,totalPen,totalPen+wordLength,width,true,false);
       
       console.log('wordBox::',text,'\n',wordBox,word,spaceLeft,'=',text.slice(totalPen,totalPen+wordLength))
 
@@ -566,28 +544,24 @@ TextLayout.prototype.wordwrap = function(text,opt) {
         const splitChunks = (chunks,startSpaceLeft,width,lines,deep) =>{
           
           let spaceLeft = startSpaceLeft;
-          
-          // chunks[0] = ' '+chunks[0];
-         
-          // lines[lines.length - 1].end += 1
+
           while(chunks.length > 0){
             
             const chunk = chunks[0];
             const isLastChunk =  chunks.length === 1;
             let origChunk = chunks[0];
-            const chunkLength =  chunk.length;// + (isLastChunk ? 0 : 1);
+            const chunkLength =  chunk.length;
             const charIdx = curPen;
             
    
             const charStyle = this.getCharStyles(totalPen+chunkIdx);
             const fontScale = (charStyle.style.fontSize/opt.font.info.size);
             const space = fontScale*(spaceWidth + glyph.xoffset);
-            // console.log('curPen::::',curPen,totalPen,chunk)
-            
-            console.log(`chunkbox::(${wordLength})`,window.devicePixelRatio,chunkIdx__,text.slice(totalPen+chunkIdx,totalPen+chunkIdx+chunkLength),'//////',text.slice(totalPen,totalPen+wordLength))//totalPen+chunkIdx,chunkLength,chunk,word,spaceLeft,'=',text.slice(totalPen+chunkIdx,totalPen+chunkIdx+chunkLength))
+ 
+           
             chunkIdx__ = chunkLength;
     
-            const chunkbox = this.computeMetrics(text,totalPen+chunkIdx,totalPen+chunkIdx+chunkLength,width,true);
+            const chunkbox = this.computeMetrics(text,totalPen+chunkIdx,totalPen+chunkIdx+chunkLength,width,false,isLastChunk);
             
             // if(chunk == '­678?xxx') {
               // const box = this.computeMetrics(text,currChunkIdx,currChunkIdx+chunk.length-1,width,true)
@@ -622,7 +596,7 @@ TextLayout.prototype.wordwrap = function(text,opt) {
               console.log('spaceLeft::::',chunk,chunks,chunks.length)//,chunkbox,spaceLeft,word,chunkbox.width)
   
               
-              add(lines,chunk + (chunks.length == 1 ? ' ' : '') ,charStyle)
+              add(lines,chunk  ,charStyle)
               
 
               //  if((chunk.length-1 >  chunkbox.end) && opt.breakWords){
@@ -644,8 +618,20 @@ TextLayout.prototype.wordwrap = function(text,opt) {
               //  debugger
              
             }else{
-              spaceLeft -= chunkbox.width + space;
-              add(lines, chunk,charStyle,true)
+              console.log('space:::',chunk,isLastChunk,fontScale,spaceLeft)
+              if((chunkbox.width + space*fontScale*2 ) > spaceLeft){
+                createLine(lines,width)
+                spaceLeft = width -  chunkbox.width
+                // chunks.shift();
+              }
+              // const bb = this.computeMetrics(' ',0,1,width,true,isLastChunk);
+              // const fontScale = (charStyle.style.fontSize/opt.font.info.size);
+              const bb = isLastChunk ? spaceWidth*2*fontScale : 0;
+             
+              // const fontScale = (charStyle.style.fontSize/opt.font.info.size);
+             
+              spaceLeft -= (chunkbox.width);
+              add(lines, chunk+ (isLastChunk ? ' ' : ''),charStyle,true)
             }
            
            

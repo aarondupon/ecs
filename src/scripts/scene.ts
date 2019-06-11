@@ -84,10 +84,12 @@ GENARTOR.subscribe(time => {
   let idx = 0;
   translate3dTable.forEach((component, key, map) => {
     idx = ((idx)  %  (map.size))+1;
+    
     // const position = [0,0+Math.random(),0];
-    // const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .01 * idx)))/10, 50 * idx, 0];
-    const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .00001 * idx)))/10, 0, 0];
+    const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .01 * idx)))/10, 50 * idx, 0];
+    // const position = [Math.round((10 * (idx)) + (window.innerWidth * Math.sin(time * .00001 * idx)))/10, 0, 0];
     // console.log('translate3dTable',key,position,idx)
+    // console.log('log',key,position)
     translate3dTable.update(key, {
       position,
     });
